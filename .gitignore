@@ -1,0 +1,10 @@
+*.o
+*.obj
+*.dll
+*.a
+*.lib
+*.out
+*.app
+*.d
+.idea
+.DS_Store

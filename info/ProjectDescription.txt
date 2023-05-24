@@ -1,0 +1,39 @@
+==== Semestrálna práca - Grafické RPG ====
+
+Cielom tejto semestrálnej práce je implementovať "engine" na vytvorenie jenoduchého rpg z top-down pohľadu 
+pomocou konfiguračných súborov. Zameranie nebude až tak na hru samotnú ale skôr možnosť zmeniť príbeh/detaily
+ovplyňujúce priebeh hry. Grafická stránka hry bude implementovaná cez knižnicu ncurses (textové rozhranie).
+Vnútorná reprezentácia hry bude riadená pomocou jednoduchého ecs systému (kompozície komponentov).
+V projekte bude najčastejšie využitý polymorfizmus na definovanie rozhraní (napr jednotlivé komponenty dedia 
+od IComponent ktoré definuje základné rozhranie komponentov ako napr virtualne funkcie "onUpdate", "onDraw", atd..
+Dalšie využitie zahrňuje rôzne typy protivníkov, predmety v inventári, špeciálne schopnosti, a ďaľšie.
+Prostredie hry v ktorom sa hráč bude pohybovať sa dá rozdeliť na 3 hlavné časti: 
+1.Menu - hlavné menu hry, názov, krátky popis, možnosť načítať/vytvoriť/ukončiť hru 
+2.Hub - niečo ako hrateľné menu - malá mapa obsahujúca "obchod" a postavy ponúkajúce úlohy za určité odmeny. 
+	Hráč si bude môcť zvoliť úlohu ktorú chce plniť a následne jedným z 2 východov prejsť na danú scénu úlohy,
+	druhý východ slúži na uloženie & ukončenie hry
+3.Levle - jednotlivé scény úloh, hráč sa má dostať k východu no predtým než bude môcť úspešne odísť musí 
+	splniť požiadavky (napr zobrať aspoň 3 mince, poraziť 2 protivníkov ...atd.)
+==== Hráč  
+Na začiatku hry bude možné navoliť si meno a charakter reprezentujúci postavu v hre, 
+počas hry bude možné kúpiť/získať a následne použiť:
+	Schopnosti -  vylepšená rýchlosť, čas na reset útoku, viac hp... atď
+	Výzbroj - zníženie efektu protivníkov / rôzne druhy útokov (brnenie, meč, luk.. atď.) 
+Detaily efektov/názvov budú v konfiguračných súboroch, počet aktivovaných schopností bude obmedzený a 
+výzbroj použiteľná súčasne iba jedna svojho druhu.  
+==== Obchod 
+Miesto v "Hube" kde sa v blízkosti ponúka textové rozhranie cez ktoré bude hráč môcť predať/nakúpiť vybavenie,
+vylepšiť schopnosti a následne si z dostupných vecí vybaviť postavu. 
+Obchod vybavenie vykupuje vždy za polovicu pôvodnej ceny.
+==== Postavy ponúkajúce úlohy
+Miesta v hube kde sa hráčovi ponúka cez textové rozhranie aktivovanie budúcej úlohy. 
+Každá úloha ponúka za dokončenie jej scény odmenu. Medzi úlohami sa hráčovi predstavuje definovaný príbeh hry.   
+==== Levle
+Konfigurovateľné scény s požiadavkami na úspešný odchod, nachádzajú sa v nich:
+Protivníci (súbojové entity) sa delia na:
+	Statické - entity ktoré hráča v blízkosti poškodzujú / spôsobujú nežiadúce efekty 
+	Aktívne - entity presúvajúce sa po mape ktoré na hráča priamo útočia
+Itemy na zobratie - mince, schopnosti, vybavenie ...atď.
+Východ - miesto z ktorého sa hráč po úspešnom splnení požiadaviek dostane do hubu 
+
+==== Ostatné detaily budú postupne doplnené ==== 
