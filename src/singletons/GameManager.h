@@ -1,5 +1,5 @@
 #pragma once
-#include "../gameconstants.h"
+#include "../GameConstants.h"
 #include "../scene-management/Scene.h"
 #include <ncurses.h>
 #include <cmath>
@@ -7,8 +7,7 @@
 #include <fstream>
 #include <sstream>
 
-#define COMMENT_CONF_DELIM "//"
-#define SCENE_CONF_DELIM "#scene"
+
 
 class GameManager {
 public:
@@ -17,10 +16,13 @@ public:
     static GameManager& Get();
 
     bool Initialize(const string& gameConfig);
-    void ParseMainConfig(const string& gameConfig);
+
     bool LoadScene(int sceneId);
     bool GameCycle(int64_t deltaMs);
     const Scene& GetActiveScene();
+private:
+    void m_InitGameWindows();
+    void m_ParseMainConfig(const string& gameConfig);
 
 private:
     Scene * m_activeScene;

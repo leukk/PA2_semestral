@@ -1,5 +1,6 @@
 #pragma once
-//#include "SceneObject.h"
+#include "../GameConstants.h"
+#include "SceneObject.h"
 #include <vector>
 #include <cstdint>
 #include <deque>
@@ -12,9 +13,10 @@ public:
     Scene() = default;
     ~Scene() = default;
 
-    bool Initialize(string& sceneConfig);
+    void Initialize(string sceneConfig);
+    void CreateObject(string objectParams);
 private:
-    //vector<SceneObject*> m_sceneObjects;
+    vector<SceneObject*> m_sceneObjects;
 };
 
 

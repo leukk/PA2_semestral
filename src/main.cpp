@@ -1,4 +1,4 @@
-#include "gameconstants.h"
+#include "GameConstants.h"
 #include "singletons/GameManager.h"
 #include <chrono>
 #include <ncurses.h>
