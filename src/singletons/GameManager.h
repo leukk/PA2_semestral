@@ -1,33 +1,48 @@
 #pragma once
-#include "../GameConstants.h"
-#include "../scene-management/Scene.h"
+#include "InputManager.h"
+#include "../utils/GameConstants.h"
+#include "../scene/Scene.h"
 #include <ncurses.h>
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <string>
 #include <sstream>
 
+class Scene;
 
+using std::vector;
+
+enum GAME_STATE{
+    SCENE_LOAD,
+    RUNNING,
+    EXIT,
+    CRASH
+};
 
 class GameManager {
-public:
-    GameManager() = default;
-    ~GameManager() = default;
-    static GameManager& Get();
-
-    bool Initialize(const string& gameConfig);
-
-    bool LoadScene(int sceneId);
-    bool GameCycle(int64_t deltaMs);
-    const Scene& GetActiveScene();
 private:
+    GameManager() = default;
+public:
+    GameManager(const GameManager& other) = delete;
+    ~GameManager() = default;
+
+    static GameManager& Get();
+    bool LoadScene(int sceneId);
+    const Scene& GetActiveScene();
+    GAME_STATE GetGameState();
+private:
+    friend int main([[maybe_unused]] int argv, char * argc[]);
+    bool m_Initialize(const string& gameConfig);
+    bool m_UpdateGame(int64_t deltaMs);
     void m_InitGameWindows();
     void m_ParseMainConfig(const string& gameConfig);
 
-private:
-    Scene * m_activeScene;
-    vector<string> m_sceneConfigs;
 public:
-    WINDOW * gameWindow;
-    WINDOW * textWindow;
+    WINDOW * gameWindow = nullptr;
+    WINDOW * textWindow = nullptr;
+private:
+    Scene * m_activeScene = nullptr;
+    vector<string> m_sceneConfigs;
+    GAME_STATE m_gameState = SCENE_LOAD;
 };

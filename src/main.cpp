@@ -1,5 +1,6 @@
-#include "GameConstants.h"
+#include "utils/GameConstants.h"
 #include "singletons/GameManager.h"
+#include "singletons/InputManager.h"
 #include <chrono>
 #include <ncurses.h>
 #include <cmath>
@@ -8,6 +9,7 @@
 
 using std::min;
 using std::chrono::high_resolution_clock, std::chrono::milliseconds, std::chrono::duration_cast;
+using std::ifstream;
 
 string GetMainConfigPath(char * argConfig){
     string configPath;
@@ -81,7 +83,15 @@ int main([[maybe_unused]] int argv, char * argc[]){
 
     // Get reference to GameManager singleton
     GameManager& gameManager = GameManager::Get();
-    gameManager.Initialize(gameConfigPath);
+    gameManager.m_Initialize(gameConfigPath);
+
+    // Get reference to InputManager singleton
+    InputManager& inputManager = InputManager::m_Get();
+
+    SceneObject* obj = new MainMenu(MAIN_MENU, "main-menu", "Dungeons of Strahov", "some desc");
+    obj->Render(gameManager.gameWindow, gameManager.textWindow);
+    wrefresh(gameManager.gameWindow);
+    getch();
 
     // Enable non-blocking input mode after configuration is done
     nodelay(stdscr, true);
@@ -95,10 +105,13 @@ int main([[maybe_unused]] int argv, char * argc[]){
         auto startTime = high_resolution_clock::now();
 
         // Execute game update
-        // if(!gameSceneManager.gameLoop(deltaMs))
-        //      break;
+        inputManager.m_PollInput();
+        gameManager.m_UpdateGame(deltaMs);
 
         auto endTime = high_resolution_clock::now();
+
+        if(gameManager.GetGameState() == EXIT)
+            break;
 
         // Get delta based on start - end time & time to wait
         deltaMs = duration_cast<milliseconds>(startTime - endTime).count();
@@ -111,8 +124,6 @@ int main([[maybe_unused]] int argv, char * argc[]){
             wprintw(stdscr, "Cant keep up! Update-rate possibly set too high.\nExecution delta: %ld ms\n", deltaMs);
         else
             napms((int)waitMs);
-
-        printw("Update\n");
 
         refresh();
     }

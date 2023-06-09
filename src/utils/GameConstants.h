@@ -10,3 +10,5 @@
 #define CONF_OBJECT_DELIM "#OBJECT"
 #define CONF_PARAM_DELIM "--"
 #define CONF_COMMENT_DELIM "//"
+#define CONF_VALUE_DELIM '"'
+

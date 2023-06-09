@@ -62,22 +62,25 @@ void GameManager::m_InitGameWindows(){
     textWindow = newwin(TEXT_WIN_Y, GAME_WIN_X, winStartY + GAME_WIN_Y, winStartX);
 }
 
-bool GameManager::Initialize(const string &configPath) {
+bool GameManager::m_Initialize(const string &gameConfig) {
     try {
         m_InitGameWindows(); // Inits ncurses windows
-        m_ParseMainConfig(configPath); // Parse main config from file at configPath
+        m_ParseMainConfig(gameConfig); // Parse main config from file at configPath
     }
     catch (exception& e){
         printw("Game initialization failed due to:\n%s", e.what());
     }
 
-    if(!LoadScene(0)) // Try load first scene
+    bool loadedMainScene = LoadScene(0);
+    refresh();
+
+    if(!loadedMainScene)
         return false;
     return true;
 }
 
-bool GameManager::GameCycle(int64_t deltaMs) {
-    return false;
+bool GameManager::m_UpdateGame(int64_t deltaMs) {
+
 }
 
 bool GameManager::LoadScene(int sceneId) {
@@ -106,6 +109,10 @@ bool GameManager::LoadScene(int sceneId) {
 
 const Scene& GameManager::GetActiveScene() {
     return *m_activeScene;
+}
+
+GAME_STATE GameManager::GetGameState() {
+    return m_gameState;
 }
 
 
