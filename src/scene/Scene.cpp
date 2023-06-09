@@ -12,7 +12,7 @@ void Scene::Initialize(string sceneConfig) {
         objectParams.clear(); // Clear last objects params
 
         // Find first parameter of next object
-        firstParamPos = sceneConfig.find(CONF_PARAM_DELIM, nextObjectPos);
+        firstParamPos = sceneConfig.find(CONF_PARAM_START_DELIM, nextObjectPos);
         if(firstParamPos == string::npos)
             throw logic_error("No parameters following object delimiter\n");
 

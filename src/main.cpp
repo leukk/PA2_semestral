@@ -1,4 +1,5 @@
 #include "utils/GameConstants.h"
+#include "utils/DataLoader.h"
 #include "singletons/GameManager.h"
 #include "singletons/InputManager.h"
 #include <chrono>
@@ -11,31 +12,7 @@ using std::min;
 using std::chrono::high_resolution_clock, std::chrono::milliseconds, std::chrono::duration_cast;
 using std::ifstream;
 
-string GetMainConfigPath(char * argConfig){
-    string configPath;
-    if(!argConfig)
-        printw("No config passed as argument.\n");
-    else
-        configPath = argConfig;
 
-    // Try open ifstream of main config file
-    ifstream configStream(configPath);
-    while(!configStream.is_open()){
-        char inputPath[200];
-
-        printw("Could not open config file, try entering path again:\n");
-        echo();
-        getnstr(inputPath, 199);
-        noecho();
-
-        configPath = inputPath;
-        configStream.open(configPath);
-    }
-
-    // Found file which can be read
-    configStream.close();
-    return configPath;
-}
 
 /**
  * NCurses initialization function.\n
@@ -79,11 +56,20 @@ int main([[maybe_unused]] int argv, char * argc[]){
     if(!CompatibleTerminal())
         SafeExit(EXIT_FAILURE);
 
-    string gameConfigPath = GetMainConfigPath(argc[1]);
+    // Load config from filepath provided in argc or by user
+    DataLoader dataLoader;
+    if(!dataLoader.LoadMainConfig(stdscr, argc[1]))
+        SafeExit(EXIT_FAILURE);
+
+    printw("Found %lu scenes\nScene 0 has %lu objects\n"
+           "Scene 1 has %lu objects", dataLoader.ConfigSceneCount(), dataLoader.ConfigObjectCount(0), dataLoader.ConfigObjectCount(1));
+    refresh();
 
     // Get reference to GameManager singleton
     GameManager& gameManager = GameManager::Get();
-    gameManager.m_Initialize(gameConfigPath);
+    //gameManager.m_Initialize(dataLoader);
+
+    SafeExit(EXIT_FAILURE);
 
     // Get reference to InputManager singleton
     InputManager& inputManager = InputManager::m_Get();
