@@ -1,14 +1,16 @@
 #include "utils/DataLoader.h"
-#include "singletons/GameManager.h"
-#include "singletons/InputManager.h"
+#include "managers/GameManager.h"
+#include "managers/InputManager.h"
 #include <ncurses.h>
 #include <cmath>
+#include <locale>
 
 /**
  * NCurses initialization function.\n
  * Calls all relevant ncurses functions to init terminal/screen.
  */
 void InitializeNCurses(){
+    setlocale(LC_ALL, ""); // Set locale to work
     initscr(); // Init ncurses
     start_color(); // Enable color mode
     noecho(); // Turn off terminal echoing
@@ -17,19 +19,6 @@ void InitializeNCurses(){
 }
 
 void SafeExit(int status){
-    if(status == EXIT_FAILURE){
-        // Disable non-blocking input mode when exiting to show potential exception messages
-        nodelay(stdscr, false);
-
-        // Refresh all windows for the last time
-        refresh();
-        if(GameManager::Get().gameWindow)
-            wrefresh(GameManager::Get().gameWindow);
-        if(GameManager::Get().textWindow)
-            wrefresh(GameManager::Get().textWindow);
-        getch();
-    }
-
     // End ncurses mode & exit program
     endwin();
     exit(status);
@@ -40,23 +29,28 @@ int main([[maybe_unused]] int argv, char * argc[]){
 
     // Load config from filepath provided in argc or by user
     DataLoader dataLoader;
-    if(!dataLoader.LoadMainConfig(stdscr, argc[1]))
+    if(!dataLoader.LoadMainConfig(argc[1]))
         SafeExit(EXIT_FAILURE);
+
+    clear();
 
     // Get reference to GameManager singleton & initialize it
     GameManager& gameManager = GameManager::Get();
-    if(!gameManager.Initialize(dataLoader))
+    if(!gameManager.Initialize(&dataLoader))
         SafeExit(EXIT_FAILURE);
+
+    wclear(gameManager.textWindow);
+    wclear(gameManager.gameWindow);
 
     // Get reference to InputManager singleton
     InputManager& inputManager = InputManager::m_Get();
 
     // Enable non-blocking input mode & clear stdscr after configuration is done
     nodelay(stdscr, true);
-    clear();
+
 
     while(true){
-        // Update all managers
+        // Fetch input & update game afterward
         inputManager.m_PollInput();
         gameManager.m_GameLoop();
 

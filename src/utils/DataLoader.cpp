@@ -3,22 +3,21 @@
 DataLoader::DataLoader() : m_configString(), m_configData(map<string,string>()), m_sceneObjectCounts(vector<int>()){
 }
 
-string DataLoader::m_GetMainConfigPath(WINDOW * interactionWin, char * argConfig){
+string DataLoader::m_GetMainConfigPath(char * argConfig){
     string configPath;
     if(!argConfig)
-        wprintw(interactionWin, "No config passed as argument.\n");
+        GameManager::Get().ShowError(" No config passed as argument.\n");
     else
         configPath = argConfig;
-    wrefresh(interactionWin);
 
     // Try open ifstream of main config file
     ifstream configStream(configPath);
     while(!configStream.is_open()){
         char inputPath[200];
 
-        wprintw(interactionWin, "Could not open config file, try entering path again or abort by typing X:\n");
-        wrefresh(interactionWin);
+        GameManager::Get().ShowError(" Could not open config file, try entering path again or abort by typing X:\n  ");
 
+        nodelay(GameManager::Get().gameWindow, false);
         echo();
         getnstr(inputPath, 199);
         noecho();
@@ -32,6 +31,7 @@ string DataLoader::m_GetMainConfigPath(WINDOW * interactionWin, char * argConfig
 
     // Found file which can be read
     configStream.close();
+    nodelay(GameManager::Get().gameWindow, true);
     return configPath;
 }
 
@@ -151,10 +151,11 @@ void DataLoader::m_ProcessParameters(const string& prefix){
     }
 }
 
-bool DataLoader::LoadMainConfig(WINDOW *interactionWin, char * argConfig) {
+bool DataLoader::LoadMainConfig(char * argConfig) {
+    ostringstream errorMsg;
     try{
         // Try to validate or get config path from user
-        string cfgPath = m_GetMainConfigPath(interactionWin, argConfig);
+        string cfgPath = m_GetMainConfigPath(argConfig);
         if(cfgPath.empty())
             return false;
 
@@ -163,22 +164,21 @@ bool DataLoader::LoadMainConfig(WINDOW *interactionWin, char * argConfig) {
         m_ProcessConfigString();
     }
     catch (invalid_argument& e){
-        wprintw(interactionWin, "Config processing failed at:\n%50s\nReason: %s", m_configString.c_str(), e.what());
-        wrefresh(interactionWin);
-        getch();
+        errorMsg << " Config processing failed at:\n" << m_configString.substr(0,50) << "\n";
+        errorMsg << " Reason: " << string(e.what()) << "\n";
+        GameManager::Get().ShowError(errorMsg.str());
         return false;
     }
     catch (exception& e) {
-        wprintw(interactionWin, "Failed to load config, reason: %s\n", e.what());
-        wrefresh(interactionWin);
-        getch();
+        errorMsg << " Failed to load config, reason: " << string(e.what()) << "\n";
+        GameManager::Get().ShowError(errorMsg.str());
         return false;
     }
 
-    wprintw(interactionWin, "Config loaded, found:\n"
-                            "%lu scenes containing %lu parameters\n",
+    wprintw(GameManager::Get().textWindow, " Config loaded, found:\n"
+                            " %lu scenes containing %lu parameters\n",
                             m_sceneObjectCounts.size(), m_configData.size());
-    wrefresh(interactionWin);
+    wrefresh(GameManager::Get().textWindow);
     return true;
 }
 
@@ -216,4 +216,16 @@ int DataLoader::ConfigGetNumParam(int sceneIndex, int objectIndex, const string 
         throw invalid_argument("Failed conversion of \"" + stringValue + "\" to number");
     }
     return numValue;
+}
+
+void DataLoader::LoadPlayerData() {
+
+}
+
+void DataLoader::PlayerDataSave(const string& key, const string& value) {
+
+}
+
+string DataLoader::PlayerDataLoad(const string& key) {
+
 }

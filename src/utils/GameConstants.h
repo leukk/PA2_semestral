@@ -15,9 +15,12 @@
 #define PARAM_GAME_WIN_X "--game-win-x"
 #define PARAM_TEXT_WIN_Y "--text-win-y"
 #define PARAM_DEFAULT_SCENE "--default-scene"
-#define PARAM_OBJECT_TYPE "--type"
+#define PARAM_OBJECT_COMMON_POSITION "--position"
+#define PARAM_OBJECT_COMMON_ACTIVE "--active"
+#define PARAM_OBJECT_COMMON_TYPE "--type"
+#define PARAM_OBJECT_COMMON_TAGS "--tags"
 
 #define OBJECT_MAIN_MENU "main-menu"
 #define OBJECT_TEXT "text"
-#define OBJECT_BOX "box"
+#define OBJECT_PLAYER_CREATOR "player-creator"
 

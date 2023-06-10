@@ -12,6 +12,7 @@
 #include <sstream>
 
 class Scene;
+class DataLoader;
 
 using std::vector;
 
@@ -30,21 +31,26 @@ public:
     ~GameManager() = default;
 
     static GameManager& Get();
-    bool Initialize(DataLoader& dataLoader);
-    bool LoadScene(int sceneId);
+    bool Initialize(DataLoader* dataLoader);
+    bool LoadScene(int sceneIndex);
+    void ShowError(const string& message);
+    void ExitGame();
     GAME_STATE GetGameState();
 private:
     friend int main([[maybe_unused]] int argv, char * argc[]);
     void m_GameLoop();
     void m_InitGameWindows();
+    void m_RefreshWindows() const;
     [[nodiscard]] bool m_CheckTerminal() const;
 
 public:
-    WINDOW * gameWindow = nullptr;
-    WINDOW * textWindow = nullptr;
-    DataLoader gameData;
+    WINDOW * gameWindow = stdscr;
+    WINDOW * textWindow = stdscr;
+    DataLoader * gameData;
+
+    Scene * activeScene = nullptr;
+    size_t activeSceneIndex = 0;
 private:
-    Scene * m_activeScene = nullptr;
     GAME_STATE m_gameState = SCENE_LOAD;
 
     int m_gameWinY = 0, m_gameWinX = 0, m_textWinY = 0;
@@ -54,4 +60,6 @@ private:
     long m_targetMs = 0; // Target execution time in ms
     long m_deltaMs = 0;  // Measured execution time in ms
     long m_waitMs = 0; // How long to wait in case execution is faster than target
+
+    size_t m_visualCounter = 0;
 };

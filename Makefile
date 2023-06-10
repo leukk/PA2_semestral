@@ -1,41 +1,32 @@
 COMPILER=g++
-CFLAGS=-Wall -Wextra -pedantic -lncurses -std=c++17 -g
+CFLAGS=-Wall -Wextra -pedantic -lncursesw -std=c++17 -g
 OPT=-O0
+BINARY="game.app"
 
-
-BINARY=game.app
+UTIL_CPP=$(wildcard src/utils/*.cpp)
+SCENE_CPP=$(wildcard src/scene/*.cpp)
+MANAGERS_CPP=$(wildcard src/managers/*.cpp)
+SCENE_OBJ_CPP=$(wildcard src/scene-objects/*.cpp)
 
 all: $(BINARY)
 
-$(BINARY): main.o Scene.o GameManager.o InputManager.o SceneObject.o MainMenu.o Text.o Vector2.o DataLoader.o
-	$(COMPILER) $(CFLAGS) $^ -o $(BINARY)
+$(BINARY): main.o utils.o scene.o scene-objects.o managers.o
+	$(COMPILER) $(CFLAGS) $(wildcard *.o) -o $(BINARY)
 
 main.o: src/main.cpp
 	$(COMPILER) $(CFLAGS) -c $^ -o $@
 
-GameManager.o: src/singletons/GameManager.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
+utils.o: $(UTIL_CPP)
+	$(COMPILER) $(CFLAGS) -c $^
 
-InputManager.o: src/singletons/InputManager.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
+scene.o: $(SCENE_CPP)
+	$(COMPILER) $(CFLAGS) -c $^
 
-Scene.o: src/scene/Scene.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
+managers.o: $(MANAGERS_CPP)
+	$(COMPILER) $(CFLAGS) -c $^
 
-SceneObject.o: src/scene/SceneObject.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
-
-MainMenu.o: src/scene-objects/MainMenu.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
-
-Text.o: src/scene-objects/Text.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
-
-Vector2.o: src/utils/Vec2.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
-
-DataLoader.o: src/utils/DataLoader.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
+scene-objects.o: $(SCENE_OBJ_CPP)
+	$(COMPILER) $(CFLAGS) -c $^
 
 clean:
 	rm -rf $(BINARY) *.o

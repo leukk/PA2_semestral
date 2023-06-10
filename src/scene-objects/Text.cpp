@@ -1,27 +1,42 @@
 #include "Text.h"
 
-Text::Text(string objectType, string tags, string contents, Vec2 position)
-        : SceneObject(position, Vec2::Zero(), std::move(objectType), std::move(tags)),
-        m_contents(contents){
+#include <utility>
+
+Text::Text(Vec2 position, bool active, string objectType, string tags, string contents)
+        : SceneObject(position, active, std::move(objectType), std::move(tags)),
+        m_contents(std::move(contents)), m_startX(0), m_startY(0), m_lines({}){
+}
+
+void Text::Start() {
+    size_t lastNewline = 0;
+    size_t nextNewline = 0;
+    string lineString;
+    bool hasNewlines = false;
+    while ((nextNewline = m_contents.find("!n", lastNewline+2)) != string::npos){
+        if(!hasNewlines)
+            lineString = m_contents.substr(lastNewline, nextNewline-lastNewline);
+        else
+            lineString = m_contents.substr(lastNewline+2, nextNewline-lastNewline-2);
+        m_lines.push_back(lineString);
+        lastNewline = nextNewline;
+        m_startY++;
+        hasNewlines = true;
+    }
+    if(hasNewlines)
+        m_lines.push_back(m_contents.substr(lastNewline+2));
+
+    if(!hasNewlines)
+        m_lines.push_back(m_contents);
 }
 
 void Text::Render(WINDOW *gameWin, WINDOW *textWin) {
-    int startY = position == Vec2::Zero() ? getmaxy(gameWin) / 2 : position.y;
-    int startX = position.x;
+    int startY = position.y;
 
-    size_t lastNewline = 0;
-    size_t nextNewline = 0;
-    string renderString;
-    bool hasNewlines = false;
-    while ((nextNewline = m_contents.find("\\n", lastNewline+2)) != string::npos){
-        renderString = m_contents.substr(lastNewline+2, nextNewline-lastNewline-2);
-        mvwprintw(gameWin, startY, startX, "%s\n", renderString.c_str());
-        lastNewline = nextNewline;
+    for (auto& line: m_lines) {
+        mvwprintw(gameWin, startY, position.x, "%s\n", line.c_str());
         startY++;
-        hasNewlines = true;
     }
-
-    if(!hasNewlines)
-        mvwprintw(gameWin, startY, startX, "%s\n", m_contents.c_str());
 }
+
+
 

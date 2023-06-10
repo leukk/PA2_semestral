@@ -1,16 +1,13 @@
 #include "Scene.h"
 
- Scene::Scene(int sceneId) {
-    // Get game data & number of objects in given scene
-    DataLoader& gameData = GameManager::Get().gameData;
-    int sceneObjCount = (int)gameData.ConfigObjectCount(sceneId);
+ Scene::Scene(int sceneIndex) {
+    // Get game data & number of objects in given sceneIndex
+    DataLoader* gameData = GameManager::Get().gameData;
+    int sceneObjCount = (int)gameData->ConfigObjectCount(sceneIndex);
 
     // Initialize each object by its prefix
     for (int objId = 0; objId < sceneObjCount; objId++)
-        CreateObject(sceneId, objId);
-
-    for (auto obj : sceneObjects)
-        obj->Start();
+        CreateObject(sceneIndex, objId);
 }
 
 Scene::~Scene() {
@@ -20,31 +17,36 @@ Scene::~Scene() {
 }
 
 void Scene::CreateObject(int sceneIndex, int objectIndex) {
-    DataLoader& gameData = GameManager::Get().gameData;
+    DataLoader* gameData = GameManager::Get().gameData;
 
-    // Get object type
-    string typeParam = gameData.ConfigGetParam(sceneIndex, objectIndex, PARAM_OBJECT_TYPE);
-    if(typeParam.empty())
-        throw logic_error("Invalid object type: " + typeParam);
+    // Retrieve non string parameter sources
+    string positionString = gameData->ConfigGetParam(sceneIndex, objectIndex, PARAM_OBJECT_COMMON_POSITION);
+    string activeString = gameData->ConfigGetParam(sceneIndex, objectIndex, PARAM_OBJECT_COMMON_ACTIVE);
 
-    // Retrieve common parameters
-    string tags = gameData.ConfigGetParam(sceneIndex, objectIndex, "--tags");
-    string position = gameData.ConfigGetParam(sceneIndex, objectIndex, "--position");
-    string size = gameData.ConfigGetParam(sceneIndex, objectIndex, "--size");
+    // Set or retrieve base object parameters
+    Vec2 position = positionString.empty() ? Vec2::Zero() : Vec2(positionString);
+    bool active = !(activeString == "false" || activeString == "0");
+    string objectType = gameData->ConfigGetParam(sceneIndex, objectIndex, PARAM_OBJECT_COMMON_TYPE);
+    string tags = gameData->ConfigGetParam(sceneIndex, objectIndex, PARAM_OBJECT_COMMON_TAGS);
+
+    // Throw if no object type specified
+    if(objectType.empty())
+        throw logic_error(" Trying to create object with empty object type\n");
 
     SceneObject* newObject = nullptr;
-    if(typeParam == OBJECT_MAIN_MENU){
-        string title = gameData.ConfigGetParam(sceneIndex, objectIndex, "--title");
-        string description = gameData.ConfigGetParam(sceneIndex, objectIndex, "--description");
-        newObject = new MainMenu(OBJECT_MAIN_MENU, tags, title, description);
+    if(objectType == OBJECT_MAIN_MENU){
+        newObject = new MainMenu(position, active, objectType, tags);
     }
-    if(typeParam == OBJECT_TEXT){
-        string contents = gameData.ConfigGetParam(sceneIndex, objectIndex, "--contents");
-        newObject = new Text(OBJECT_MAIN_MENU, tags, contents, Vec2(position));
+    else if(objectType == OBJECT_TEXT){
+        string contents = gameData->ConfigGetParam(sceneIndex, objectIndex, "--contents");
+        newObject = new Text(position, active, objectType, tags, contents);
+    }
+    else if(objectType == OBJECT_PLAYER_CREATOR){
+        newObject = new GameLoader(position, active, objectType, tags);
     }
 
     if(!newObject)
-        throw logic_error("Object not created, failed to match type or allocate for type: " + typeParam + "\n");
+        throw logic_error(" Object not created, failed to match type or allocate for type: " + objectType + "\n");
 
     // Add created object to "active" objects vec
     sceneObjects.push_back(newObject);
@@ -53,6 +55,14 @@ void Scene::CreateObject(int sceneIndex, int objectIndex) {
     newObject->Initialize();
     if(GameManager::Get().GetGameState() == RUNNING)
         newObject->Start();
+}
+
+SceneObject* Scene::GetObjectWithTag(const string &tag) const {
+    for (SceneObject* ptr : sceneObjects) {
+        if(ptr->HasTag(tag))
+            return ptr;
+    }
+    return nullptr;
 }
 
 

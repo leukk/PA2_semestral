@@ -1,4 +1,5 @@
 #pragma once
+#include "../managers/GameManager.h"
 #include "GameConstants.h"
 #include <string>
 #include <ncurses.h>
@@ -21,18 +22,18 @@ public:
     DataLoader(const DataLoader& other) = default;
     ~DataLoader() = default;
 
-    bool LoadMainConfig(WINDOW *interactionWin, char * argConfig);
+    bool LoadMainConfig(char * argConfig);
     [[nodiscard]] size_t ConfigSceneCount() const;
     [[nodiscard]] size_t ConfigObjectCount(int sceneIndex) const;
     [[nodiscard]] string ConfigGetParam(int sceneIndex, int objectIndex, const string& param) const;
     [[nodiscard]] int ConfigGetNumParam(int sceneIndex, int objectIndex, const string& param) const;
 
-    void LoadPlayerData(WINDOW * interactionWin);
-    void PlayerDataSave(string key, string value);
-    void PlayerDataLoad(string key, string value);
+    void LoadPlayerData();
+    void PlayerDataSave(const string& key, const string& value);
+    string PlayerDataLoad(const string& key);
 
 private:
-    static string m_GetMainConfigPath(WINDOW * interactionWin, char * argConfig);
+    static string m_GetMainConfigPath(char * argConfig);
     static string m_GetConfigString(const string &configPath);
     void m_ProcessConfigString();
     void m_ProcessParameters(const string &prefix);
