@@ -195,12 +195,19 @@ string DataLoader::ConfigGetParam(int sceneIndex, int objectIndex, const string 
     key << sceneIndex << CONF_PREFIX_DELIM << objectIndex << CONF_PREFIX_DELIM << param;
     auto valueIt = m_configData.find(key.str());
     if(valueIt == m_configData.end())
-        throw invalid_argument("Couldn't find value pair of: " + key.str());
+        return {};
     return valueIt->second;
 }
 
 int DataLoader::ConfigGetNumParam(int sceneIndex, int objectIndex, const string &param) const{
+    // Get param string value
     string stringValue = ConfigGetParam(sceneIndex, objectIndex, param);
+
+    // Implicitly convert missing/empty parameter to 0
+    if(stringValue.empty())
+        return 0;
+
+    // If string has contents, convert to number via stoi
     int numValue = 0;
     try {
         numValue = stoi(stringValue);

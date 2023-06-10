@@ -1,66 +1,53 @@
 #include "Scene.h"
 
-void Scene::Initialize(string sceneConfig) {
-    string objectParams;
-    size_t nextObjectPos, firstParamPos;
-    while (!sceneConfig.empty()){
-        // Find next scene object to set up, else end initialization
-        nextObjectPos = sceneConfig.find(CONF_OBJECT_DELIM);
-        if(nextObjectPos == string::npos)
-            return;
+ Scene::Scene(int sceneId) {
+    // Get game data & number of objects in given scene
+    DataLoader& gameData = GameManager::Get().gameData;
+    int sceneObjCount = (int)gameData.ConfigObjectCount(sceneId);
 
-        objectParams.clear(); // Clear last objects params
+    // Initialize each object by its prefix
+    for (int objId = 0; objId < sceneObjCount; objId++)
+        CreateObject(sceneId, objId);
 
-        // Find first parameter of next object
-        firstParamPos = sceneConfig.find(CONF_PARAM_START_DELIM, nextObjectPos);
-        if(firstParamPos == string::npos)
-            throw logic_error("No parameters following object delimiter\n");
+    for (auto obj : sceneObjects)
+        obj->Start();
+}
 
-        // Find where following scene object begins (param range) & copy param part
-        nextObjectPos = sceneConfig.find(CONF_OBJECT_DELIM, firstParamPos);
-        if(nextObjectPos == string::npos)
-            objectParams = sceneConfig.substr(firstParamPos);
-        else
-            objectParams = sceneConfig.substr(firstParamPos, nextObjectPos - firstParamPos);
-
-        // Create object
-        CreateObject(objectParams);
-
-        // Remove processed part from sceneConfig string or break if no more objects in config
-        if(nextObjectPos == string::npos)
-            return;
-        sceneConfig = sceneConfig.substr(nextObjectPos);
+Scene::~Scene() {
+    for (SceneObject* ptr : sceneObjects) {
+        delete ptr;
     }
 }
 
-void Scene::CreateObject(const string& objectParams) {
-    string typeParamString = m_GetParamValue("--type", objectParams);
-    auto typeParam = static_cast<OBJECT_TYPE>(stoi(typeParamString));
+void Scene::CreateObject(int sceneIndex, int objectIndex) {
+    DataLoader& gameData = GameManager::Get().gameData;
 
-    if(typeParam == NONE)
-        throw logic_error("Invalid object type of " + typeParamString);
+    // Get object type
+    string typeParam = gameData.ConfigGetParam(sceneIndex, objectIndex, PARAM_OBJECT_TYPE);
+    if(typeParam.empty())
+        throw logic_error("Invalid object type: " + typeParam);
 
-    // Retrieve parameters from config string & create object
+    // Retrieve common parameters
+    string tags = gameData.ConfigGetParam(sceneIndex, objectIndex, "--tags");
+    string position = gameData.ConfigGetParam(sceneIndex, objectIndex, "--position");
+    string size = gameData.ConfigGetParam(sceneIndex, objectIndex, "--size");
+
     SceneObject* newObject = nullptr;
-    string tags = m_GetParamValue("--tags", objectParams);
-
-    if(typeParam == TEXT){
-
+    if(typeParam == OBJECT_MAIN_MENU){
+        string title = gameData.ConfigGetParam(sceneIndex, objectIndex, "--title");
+        string description = gameData.ConfigGetParam(sceneIndex, objectIndex, "--description");
+        newObject = new MainMenu(OBJECT_MAIN_MENU, tags, title, description);
     }
-    else if(typeParam == LOGO){
-
-    }
-    else if(typeParam == MAIN_MENU){
-        string name = m_GetParamValue("--name", objectParams);
-        string description = m_GetParamValue("--description", objectParams);
-        newObject = new MainMenu(typeParam, tags, name, description);
+    if(typeParam == OBJECT_TEXT){
+        string contents = gameData.ConfigGetParam(sceneIndex, objectIndex, "--contents");
+        newObject = new Text(OBJECT_MAIN_MENU, tags, contents, Vec2(position));
     }
 
     if(!newObject)
-        throw logic_error("Object not created, failed to match type or allocate\n");
+        throw logic_error("Object not created, failed to match type or allocate for type: " + typeParam + "\n");
 
     // Add created object to "active" objects vec
-    m_sceneObjects.push_back(newObject);
+    sceneObjects.push_back(newObject);
 
     // m_Initialize object & call start if scene is already loaded
     newObject->Initialize();
@@ -68,25 +55,6 @@ void Scene::CreateObject(const string& objectParams) {
         newObject->Start();
 }
 
-string Scene::m_GetParamValue(const string &param, const string &objectParams) {
-    // Finds parameter position in config - returns empty if none
-    size_t paramPos = objectParams.find(param);
-    if(paramPos == string::npos)
-        return {};
-
-    // Move paramPos "in front" of value following parameter
-    paramPos += param.size();
-
-    size_t valueStart = objectParams.find(CONF_VALUE_DELIM, paramPos);
-    if(valueStart == string::npos)
-        throw logic_error("No value delimiters following parameter\n");
-
-    size_t valueEnd = objectParams.find(CONF_VALUE_DELIM,valueStart+1);
-    if(valueEnd == string::npos)
-        throw logic_error("No ending value delimiter found\n");
-
-    return objectParams.substr(valueStart+1, valueEnd-valueStart-1);
-}
 
 
 

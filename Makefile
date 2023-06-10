@@ -7,7 +7,7 @@ BINARY=game.app
 
 all: $(BINARY)
 
-$(BINARY): main.o Scene.o GameManager.o InputManager.o SceneObject.o MainMenu.o Vector2.o DataLoader.o
+$(BINARY): main.o Scene.o GameManager.o InputManager.o SceneObject.o MainMenu.o Text.o Vector2.o DataLoader.o
 	$(COMPILER) $(CFLAGS) $^ -o $(BINARY)
 
 main.o: src/main.cpp
@@ -26,6 +26,9 @@ SceneObject.o: src/scene/SceneObject.cpp
 	$(COMPILER) $(CFLAGS) -c $^ -o $@
 
 MainMenu.o: src/scene-objects/MainMenu.cpp
+	$(COMPILER) $(CFLAGS) -c $^ -o $@
+
+Text.o: src/scene-objects/Text.cpp
 	$(COMPILER) $(CFLAGS) -c $^ -o $@
 
 Vector2.o: src/utils/Vec2.cpp

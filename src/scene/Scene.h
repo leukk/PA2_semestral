@@ -6,25 +6,24 @@ class GameManager;
 #include "../singletons/GameManager.h"
 #include "../utils/GameConstants.h"
 #include "../scene-objects/MainMenu.h"
+#include "../scene-objects/Text.h"
 #include <vector>
 #include <sstream>
 
 using std::vector;
 using std::logic_error;
+using std::to_string;
 
 class Scene{
 public:
-    Scene() = default;
+    Scene() = delete;
+    explicit Scene(int sceneId);
     Scene(const Scene& other) = default;
-    ~Scene() = default;
+    ~Scene();
 
-    void Initialize(string sceneConfig);
-    void CreateObject(const string& objectParams);
-private:
-    static string m_GetParamValue(const string& param, const string& objectParams);
-public:
-private:
-    vector<SceneObject*> m_sceneObjects;
+    void CreateObject(int sceneIndex, int objectIndex);
+
+    vector<SceneObject*> sceneObjects;
 };
 
 

@@ -1,7 +1,12 @@
 #include "Vec2.h"
 
 Vec2::Vec2(int initY, int initX) : y(initY), x(initX) {
+}
 
+Vec2::Vec2(const string& yxString) {
+    istringstream source(yxString);
+    source >> y;
+    source >> x;
 }
 
 Vec2 Vec2::operator+(const Vec2 &other) const {

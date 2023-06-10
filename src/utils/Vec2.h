@@ -1,7 +1,15 @@
+#pragma once
+#include <string>
+#include <sstream>
+
+using std::string;
+using std::istringstream;
+
 class Vec2 {
 public:
     Vec2() = default;
     explicit Vec2(int initY = 0, int initX = 0);
+    explicit Vec2(const string& yxString);
     Vec2(const Vec2& other) = default;
     Vec2& operator=(const Vec2& other) = default;
     ~Vec2() = default;

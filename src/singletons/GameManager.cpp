@@ -1,54 +1,12 @@
 #include "GameManager.h"
 
 using namespace std;
+using std::chrono::high_resolution_clock, std::chrono::milliseconds, std::chrono::duration_cast;
+
 
 GameManager& GameManager::Get() {
     static GameManager m_instance;
     return m_instance;
-}
-
-void GameManager::m_ParseMainConfig(const string &configPath) {
-    // Open config file
-    ifstream configStream(configPath);
-
-    // Split config into m_sceneConfigs vector
-    string line;
-    ostringstream sceneConfigBuffer;
-    bool first = true;
-    while (configStream.good()){
-        getline(configStream, line);
-
-        // Remove line comments (text following comment delimiter)
-        size_t commentPos = line.find(CONF_COMMENT_DELIM);
-        if(commentPos != string::npos)
-            line = line.substr(0,commentPos);
-
-        // Skip if line is empty
-        if(line.empty())
-            continue;
-
-        // Detect new scene config (starts with scene delimiter)
-        // Push loaded scene config to m_sceneConfigs vector
-        bool newScene = line.rfind(CONF_SCENE_DELIM, 0) != string::npos;
-        if(newScene && !first){
-            m_sceneConfigs.push_back(sceneConfigBuffer.str());
-            sceneConfigBuffer.clear();
-        }
-
-        if(newScene)
-            continue;
-
-        // Copy other config lines to sceneConfigBuffer
-        sceneConfigBuffer << line << " ";
-        first = false;
-    }
-    // Push last scene to scene config vector
-    m_sceneConfigs.push_back(sceneConfigBuffer.str());
-
-    printw("Loaded %zu scenes\n", m_sceneConfigs.size());
-
-    if(m_sceneConfigs.empty())
-        throw std::logic_error("Scene config invalid, no scenes found\n");
 }
 
 void GameManager::m_InitGameWindows(){
@@ -56,59 +14,132 @@ void GameManager::m_InitGameWindows(){
     int termSizeX = 0;
     getmaxyx(stdscr,termSizeY,termSizeX); // Retrieve size of terminal window
 
-    int winStartY = (termSizeY / 2) - ((GAME_WIN_Y + TEXT_WIN_Y) / 2);
-    int winStartX = (termSizeX / 2) - (GAME_WIN_X / 2);
-    gameWindow = newwin(GAME_WIN_Y, GAME_WIN_X, winStartY, winStartX);
-    textWindow = newwin(TEXT_WIN_Y, GAME_WIN_X, winStartY + GAME_WIN_Y, winStartX);
+    int winStartY = (termSizeY / 2) - ((m_gameWinY + m_textWinY) / 2);
+    int winStartX = (termSizeX / 2) - (m_gameWinX / 2);
+    gameWindow = newwin(m_gameWinY, m_gameWinX, winStartY, winStartX);
+    textWindow = newwin(m_textWinY, m_gameWinX, winStartY + m_gameWinY, winStartX);
 }
 
-bool GameManager::m_Initialize(const string &gameConfig) {
-    try {
-        m_InitGameWindows(); // Inits ncurses windows
-        m_ParseMainConfig(gameConfig); // Parse main config from file at configPath
-    }
-    catch (exception& e){
-        printw("Game initialization failed due to:\n%s", e.what());
-    }
-
-    bool loadedMainScene = LoadScene(0);
-    refresh();
-
-    if(!loadedMainScene)
+/**
+ *  Checks if terminal supports all necessary features & is of required size
+ *  returns true / false as result
+ */
+bool GameManager::m_CheckTerminal() const{
+    int y,x;
+    getmaxyx(stdscr,y,x); // Gets terminal y,x size
+    if(y < m_gameWinY || x < m_gameWinX){
+        printw(" Insufficient window size (%d,%d)\n", y, x);
+        printw(" Required minimum is (%d,%d)\n",m_gameWinY, m_gameWinX);
+        refresh();
         return false;
+    }
     return true;
 }
 
-bool GameManager::m_UpdateGame(int64_t deltaMs) {
+bool GameManager::Initialize(DataLoader& dataLoader) {
+    // Set data loaded from dataLoader as gameData
+    gameData = dataLoader;
 
+    // Try fetch game required variables
+    ostringstream missingParams;
+    try {
+        m_updateRate = dataLoader.ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_UPDATE_RATE);
+        if(!m_updateRate)
+            missingParams << PARAM_UPDATE_RATE << " ";
+        m_gameWinY = dataLoader.ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_GAME_WIN_Y);
+        if(!m_gameWinY)
+            missingParams << PARAM_GAME_WIN_Y << " ";
+        m_gameWinX = dataLoader.ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_GAME_WIN_X);
+        if(!m_gameWinX)
+            missingParams << PARAM_GAME_WIN_X << " ";
+        m_textWinY = dataLoader.ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_TEXT_WIN_Y);
+        if(!m_textWinY)
+            missingParams << PARAM_TEXT_WIN_Y << " ";
+        m_defaultScene = dataLoader.ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_DEFAULT_SCENE);
+
+        if(!missingParams.str().empty())
+            throw invalid_argument(missingParams.str());
+    }
+    catch (invalid_argument& e){
+        printw(" Missing global parameters in config\n%s\n",e.what());
+        refresh();
+        return false;
+    }
+    catch (exception& e){
+        printw(" Game initialization failed due to:\n%s", e.what());
+        refresh();
+        return false;
+    }
+
+    // Set target execution time
+    m_targetMs = 1000/m_updateRate;
+
+    // Check for terminal compatibility
+    if(!m_CheckTerminal())
+        return false;
+
+    // Inits ncurses game&text windows
+    m_InitGameWindows();
+
+
+    // Try load default scene & return result
+    return LoadScene(m_defaultScene);
+}
+
+void GameManager::m_GameLoop() {
+    auto startTime = high_resolution_clock::now();
+
+    // Clear window contents & reset text cursor position
+    werase(gameWindow);
+    werase(textWindow);
+    wmove(textWindow,1,0);
+
+    // Print error message if execution time takes longer than target
+    if(m_waitMs < 0)
+        wprintw(textWindow, " Cant keep up! Update-rate possibly set too high.\n");
+    wprintw(textWindow, " Frame time: %ld ms\n", m_deltaMs);
+
+    // Update & render all scene objects
+    double deltaS = 1000.0/(double)m_deltaMs;
+    for(auto obj : m_activeScene->sceneObjects){
+        obj->Update(deltaS);
+        obj->Render(gameWindow, textWindow);
+    }
+
+    // Create box outline around windows
+    box(gameWindow,0,0);
+    box(textWindow,0,0);
+
+    // Refresh game/text windows
+    wrefresh(gameWindow);
+    wrefresh(textWindow);
+
+    auto endTime = high_resolution_clock::now();
+
+    // Get delta based on start - end time & time to wait
+    m_deltaMs = duration_cast<milliseconds>(startTime - endTime).count();
+    m_deltaMs = m_deltaMs == 0 ? 1 : m_deltaMs;
+    m_waitMs = m_targetMs - m_deltaMs;
+
+    // If needed nap so execution matches target
+    if(m_waitMs > 0)
+        napms((int)m_waitMs);
 }
 
 bool GameManager::LoadScene(int sceneId) {
-    // Config for scene with given id does not exist
-    if(m_sceneConfigs[sceneId].empty())
-        return false;
-
     // Delete current scene
     delete m_activeScene;
 
-    // Create new scene
-    m_activeScene = new Scene();
-    if(!m_activeScene)
-        return false;
-
     // Try to initialize scene
     try {
-        m_activeScene->Initialize(m_sceneConfigs[sceneId]);
+        m_activeScene = new Scene(sceneId);
     }
     catch (exception& e){
-        printw("Loading scene %d failed due to:\n%s", sceneId, e.what());
+        printw(" Loading scene %d failed due to:\n%s\n", sceneId, e.what());
+        return false;
     }
 
     return true;
-}
-
-const Scene& GameManager::GetActiveScene() {
-    return *m_activeScene;
 }
 
 GAME_STATE GameManager::GetGameState() {
