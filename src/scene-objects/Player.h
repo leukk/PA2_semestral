@@ -14,8 +14,17 @@ public:
     bool Update(double updateDelta) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 
-    int m_speed;
-    int m_range;
 private:
+    static bool m_CheckCollision(int y, int x, const string& collisionChars);
+
+public:
+    int livesLeft;
+    int totalSpeed;
+    int totalRange;
+
+private:
+    string m_collisionChars;
+    string m_playerDamageChars;
+    string m_bulletChar;
     string m_playerChar;
 };

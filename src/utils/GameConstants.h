@@ -22,6 +22,11 @@
 #define PARAM_CREATE_BUFF_TOKENS "--buff-tokens"
 #define PARAM_ITEM_EQUIP_LIMIT "--item-limit"
 
+// Scene parameter keywords
+#define PARAM_COLLISION "--collision-chars"
+#define PARAM_PLAYER_DAMAGE "--player-damage-chars"
+#define PARAM_PLAYER_BULLET "--player-bullet-char"
+
 // Common object parameter keywords
 #define PARAM_OBJECT_COMMON_POSITION "--position"
 #define PARAM_OBJECT_COMMON_ACTIVE "--active"
@@ -34,34 +39,25 @@
 #define OBJECT_TRIGGER "trigger"
 #define OBJECT_PLAYER "player"
 #define OBJECT_ENEMY "enemy"
-#define OBJECT_TASK_GIVER "task-giver"
-#define OBJECT_MERCHANT "merchant"
 #define OBJECT_MAIN_MENU_MGR "main-menu-manager"
 #define OBJECT_HUB_MGR "hub-manager"
 #define OBJECT_LEVEL_MGR "level-manager"
 
-// Player data keywords
-#define PLAYER_DATA_EQUIPPED_ITEMS "--equipped-items"
-#define PLAYER_DATA_OWNED_ITEMS "--owned-items"
-#define PLAYER_DATA_NEXT_LEVEL "--next-level"
-#define PLAYER_DATA_ROLE "--role"
-#define PLAYER_DATA_COINS "--coins"
-#define PLAYER_DATA_SPEED "--speed"
-#define PLAYER_DATA_LIVES "--lives"
-#define PLAYER_DATA_RANGE "--range"
-
-#define BUFF_SPEED_INDEX 0
-#define BUFF_LIVES_INDEX 1
-#define BUFF_RANGE_INDEX 2
+// Buffs indexes
+#define EFFECT_CHANGE_SPEED 0
+#define EFFECT_CHANGE_LIVES 1
+#define EFFECT_CHANGE_RANGE 2
 
 // Level / item param prefix keywords
 #define PARAM_LEVEL_TITLE_PREFIX "--level-title-"
 #define PARAM_LEVEL_DESCRIPTION_PREFIX "--level-description-"
 #define PARAM_LEVEL_SCENE_INDEX_PREFIX "--level-scene-"
+#define PARAM_LEVEL_REWARD_PREFIX "--level-reward-"
 #define PARAM_ITEM_TITLE_PREFIX "--item-title-"
 #define PARAM_ITEM_PRICE_PREFIX "--item-price-"
 #define PARAM_ITEM_EFFECT_PREFIX "--item-effect-"
 #define PARAM_ITEM_EFFECT_CHANGE_PREFIX "--item-effect-change-"
+
 
 // MainMenuManager dependencies keywords
 #define TAG_M_MENU_MAIN_UI "main-ui"
@@ -76,13 +72,22 @@
 #define TAG_HUB_EQUIP_TRIGGER "equip-zone"
 #define TAG_HUB_EXIT_TRIGGER "exit-zone"
 #define TAG_HUB_LEVEL_TRIGGER "enter-level-zone"
-#define TAG_HUB_PLAYER "player"
 #define TAG_HUB_SHOP_UI "shop-ui"
 #define TAG_HUB_EQUIP_UI "equip-ui"
 #define TAG_HUB_DEFAULT_UI "default-ui"
 #define TAG_HUB_SHOP_MENU "shop-menu"
 #define TAG_HUB_EQUIP_MENU "equip-menu"
 
+// LevelManager dependencies keywords
+#define TAG_LEVEL_ABORT_TRIGGER "abort-zone"
+#define TAG_LEVEL_SUCCESS_TRIGGER "success-zone"
+#define TAG_LEVEL_COLLECT_OBJ "collect"
+
+// Shared tag keywords
+#define TAG_PLAYER "player"
+#define TAG_ENEMY "enemy"
+
+// SPACE keypress
 #define KEY_SPACE 32
 
 

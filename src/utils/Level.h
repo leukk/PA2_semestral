@@ -9,5 +9,6 @@ struct Level{
     ~Level() = default;
     string title{};
     string description{};
-    int sceneIndex{};
+    int sceneIndex = 0;
+    int reward = 0;
 };

@@ -6,8 +6,10 @@
 #include "../scene-objects/Menu.h"
 #include "../scene-objects/Trigger.h"
 #include "../scene-objects/Player.h"
+#include "../scene-objects/Enemy.h"
 #include "../scene-objects/MainMenuManager.h"
 #include "../scene-objects/HubManager.h"
+#include "../scene-objects/LevelManager.h"
 #include <vector>
 #include <sstream>
 

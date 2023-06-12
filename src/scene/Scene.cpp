@@ -41,7 +41,8 @@ void Scene::CreateObject(int sceneIndex, int objectIndex) {
         newObject = new HubManager(position, active, objectType, tags, Vec2(playerSpawnPos));
     }
     else if(objectType == OBJECT_LEVEL_MGR){
-        newObject = nullptr;
+        string playerSpawnPos = gameData.ConfigGetParam(sceneIndex, objectIndex, "--player-spawn-pos");
+        newObject = new LevelManager(position, active, objectType, tags, Vec2(playerSpawnPos));
     }
     else if(objectType == OBJECT_TEXT){
         string contents = gameData.ConfigGetParam(sceneIndex, objectIndex, "--contents");
@@ -58,6 +59,11 @@ void Scene::CreateObject(int sceneIndex, int objectIndex) {
     }
     else if(objectType == OBJECT_PLAYER){
         newObject = new Player(position, active, objectType, tags);
+    }
+    else if(objectType == OBJECT_ENEMY){
+        string moveDirString = gameData.ConfigGetParam(sceneIndex, objectIndex, "--move-direction");
+        int moveSpeed = gameData.ConfigGetNumParam(sceneIndex, objectIndex, "--move-speed");
+        newObject = new Enemy(position, active, objectType, tags, Vec2(moveDirString), moveSpeed);
     }
 
     if(!newObject)

@@ -98,30 +98,23 @@ const vector<Item> &DataLoader::ConfigItems() {
     return m_items;
 }
 
-void DataLoader::SetPlayerDataFile() {
+void DataLoader::SetPlayerDataFilePath() {
     m_playerDataPath.clear();
     while (m_playerDataPath.empty())
         m_playerDataPath = GetInputString(" Enter non-empty player save name:");
 }
 
+void DataLoader::UnsetPlayerDataFilePath() {
+    m_playerDataPath.clear();
+}
+
 void DataLoader::LoadPlayerData() {
-    string playerData = m_GetConfigString(m_playerDataPath);
-    size_t nextParamStart = 0, nextParamEnd = 0, valueStart = 0, valueEnd = 0;
-    while ((nextParamStart = playerData.find(CONF_PARAM_START_DELIM, valueEnd)) != string::npos){
-        nextParamEnd = playerData.find(CONF_PARAM_END_DELIM, nextParamStart+1);
-        if(nextParamEnd == string::npos)
-            throw invalid_argument(" Parameter followed by no value");
+    ifstream playerDataFile(m_playerDataPath, std::ios::in);
+    if(!playerDataFile.is_open())
+        throw invalid_argument(" Failed to open playerData, cannot open or create file");
 
-        valueStart = playerData.find(CONF_VALUE_DELIM, nextParamEnd);
-        valueEnd = playerData.find(CONF_VALUE_DELIM, valueStart+1);
-        if(valueStart == string::npos || valueEnd == string::npos)
-            throw invalid_argument(" Missing value delimiters after parameter");
-
-        string key = playerData.substr(nextParamStart, nextParamEnd-nextParamStart);
-        string value = playerData.substr(valueStart+1, valueEnd-valueStart-1);
-
-        m_playerData.insert(make_pair(key, value));
-    }
+    playerData.Read(playerDataFile);
+    playerDataFile.close();
 }
 
 void DataLoader::SavePlayerData() {
@@ -129,72 +122,12 @@ void DataLoader::SavePlayerData() {
     if(!playerDataFile.is_open())
         throw invalid_argument(" Failed to save playerData, cannot open or create file");
 
-    for (auto& it : m_playerData) {
-        playerDataFile << it.first << ' ' << '"' << it.second << '"' << '\n';
-    }
+    playerData.Write(playerDataFile);
     playerDataFile.close();
 }
 
 void DataLoader::SetDefaultPlayerStats() {
-    m_playerData.clear();
-    PlayerDataSet(PLAYER_DATA_EQUIPPED_ITEMS, "");
-    PlayerDataSet(PLAYER_DATA_OWNED_ITEMS, "");
-    PlayerDataSet(PLAYER_DATA_NEXT_LEVEL, "0");
-    PlayerDataSet(PLAYER_DATA_ROLE, "");
-    PlayerDataSet(PLAYER_DATA_COINS, "0");
-    PlayerDataSet(PLAYER_DATA_SPEED, "2");
-    PlayerDataSet(PLAYER_DATA_LIVES, "3");
-    PlayerDataSet(PLAYER_DATA_RANGE, "10");
-}
-
-void DataLoader::PlayerDataSet(const string& key, const string& value) {
-    m_playerData[key] = value;
-}
-
-void DataLoader::PlayerDataSetNum(const string &key, int value) {
-    PlayerDataSet(key, to_string(value));
-}
-
-void DataLoader::PlayerDataSetNums(const string &key, const vector<int> &values) {
-    ostringstream stringValue;
-    for (auto val: values)
-        stringValue << val << " ";
-    PlayerDataSet(key, stringValue.str());
-}
-
-string DataLoader::PlayerDataGet(const string& key) {
-    auto it = m_playerData.find(key);
-    if (it != m_playerData.end())
-        return it->second;
-    return {};
-}
-
-int DataLoader::PlayerDataGetNum(const string& key) {
-    string value;
-    try{
-        value = PlayerDataGet(key);
-        if(value.empty())
-            return 0;
-        return stoi(value);
-    }
-    catch (exception&e){
-        throw invalid_argument(" Failed conversion of \"" + value + "\" fetched by key '" + key + "' to number");
-    }
-}
-
-vector<int> DataLoader::PlayerDataGetNums(const string &key) {
-    string sourceString = PlayerDataGet(key);
-    if(sourceString.empty())
-        return {};
-
-    vector<int> result{};
-    int numberExtract = 0;
-    istringstream parseStream(sourceString);
-    while (parseStream.good()){
-        parseStream >> numberExtract;
-        result.push_back(numberExtract);
-    }
-    return result;
+    playerData = PlayerData();
 }
 
 const string& DataLoader::PlayerDataPath() {
@@ -260,10 +193,10 @@ void DataLoader::m_ProcessConfigString() {
     size_t nextScene, nextObject;
     ostringstream prefix;
 
-    int sharedParams = SHARED_PARAMETERS;
-    int sceneIndex = SHARED_PARAMETERS;
+    int sharedParams = SHARED_DATA;
+    int sceneIndex = SHARED_DATA;
     while (true){
-        int objectIndex = SHARED_PARAMETERS;
+        int objectIndex = SHARED_DATA;
         while (true){
             prefix.str("");
             prefix << sceneIndex << CONF_PREFIX_DELIM << objectIndex << CONF_PREFIX_DELIM;
@@ -350,8 +283,7 @@ void DataLoader::m_ProcessLevels() {
         if(newLevel.description.empty())
             break;
         newLevel.sceneIndex = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_LEVEL_SCENE_INDEX_PREFIX + to_string(levelIndex));
-        if(newLevel.sceneIndex == 0)
-            break;
+        newLevel.reward = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_LEVEL_REWARD_PREFIX + to_string(levelIndex));
 
         levelIndex++;
         m_levels.push_back(newLevel);
@@ -368,17 +300,14 @@ void DataLoader::m_ProcessItems() {
         newItem.price = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_PRICE_PREFIX + to_string(itemIndex));
         if(newItem.price == 0)
             break;
-        newItem.effect = ConfigGetParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_EFFECT_PREFIX + to_string(itemIndex));
-        if(newItem.effect.empty())
-            break;
+        newItem.effect = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_EFFECT_PREFIX + to_string(itemIndex));
         newItem.effectChange = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_EFFECT_CHANGE_PREFIX + to_string(itemIndex));
-        if(newItem.effectChange == 0)
-            break;
-
         itemIndex++;
         m_items.push_back(newItem);
     }
 }
+
+
 
 
 

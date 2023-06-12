@@ -8,7 +8,7 @@ Trigger::Trigger(Vec2 position, bool active, string objectType, string tags, str
 void Trigger::Start() {
     m_target = GameManager::GetActiveScene()->GetObjectWithTag(m_targetTag);
     if(!m_target)
-        throw invalid_argument("Trigger couldn't find target object, target object tag: " + m_targetTag);
+        throw invalid_argument(" Trigger couldn't find target object, target object tag: " + m_targetTag);
 }
 
 bool Trigger::Update(double deltaS) {
@@ -19,6 +19,7 @@ bool Trigger::Update(double deltaS) {
 }
 
 void Trigger::Render(WINDOW *gameWin, WINDOW *textWin) {
+    (void)textWin;
     mvwprintw(gameWin, position.y, position.x, "+");
     mvwprintw(gameWin, position.y+triggerSize.y, position.x+triggerSize.x, "+");
 }

@@ -3,6 +3,7 @@
 #include "GameConstants.h"
 #include "Level.h"
 #include "Item.h"
+#include "PlayerData.h"
 #include <string>
 #include <ncurses.h>
 #include <fstream>
@@ -16,7 +17,6 @@ using std::map, std::vector, std::distance;
 using std::ifstream, std::ofstream, std::istringstream, std::ostringstream;
 using std::exception, std::logic_error, std::invalid_argument;
 
-#define SHARED_PARAMETERS -1;
 
 class DataLoader {
 public:
@@ -32,22 +32,17 @@ public:
     [[nodiscard]] string ConfigGetParam(int sceneIndex, int objectIndex, const string& param) const;
     [[nodiscard]] int ConfigGetNumParam(int sceneIndex, int objectIndex, const string& param) const;
 
-    void SetPlayerDataFile();
+    void SetPlayerDataFilePath();
+    void UnsetPlayerDataFilePath();
     void LoadPlayerData();
     void SavePlayerData();
     void SetDefaultPlayerStats();
-
-    void PlayerDataSet(const string& key, const string& value);
-    void PlayerDataSetNum(const string& key, int value);
-    void PlayerDataSetNums(const string& key, const vector<int>& values);
-    string PlayerDataGet(const string& key);
-    int PlayerDataGetNum(const string& key);
-    vector<int> PlayerDataGetNums(const string& key);
     const string& PlayerDataPath();
 
     const vector<Level>& ConfigLevels();
     const vector<Item>& ConfigItems();
 
+    PlayerData playerData;
 private:
     static string m_GetMainConfigPath(char * argConfig);
     static string m_GetConfigString(const string &configPath);
@@ -62,9 +57,7 @@ private:
     map<string, string> m_configData;
     vector<int> m_sceneObjectCounts;
 
-    // Player data variables
     string m_playerDataPath;
-    map<string, string> m_playerData;
 
     // Preprocessed data
     vector<Level> m_levels;

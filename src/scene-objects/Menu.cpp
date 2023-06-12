@@ -18,8 +18,10 @@ void Menu::Start() {
 bool Menu::Update(double updateDelta) {
     (void) updateDelta;
 
-    if(!selectable)
+    if(!selectable || options.empty()){
+        choice = 0;
         return true;
+    }
 
     // Change m_choice based on
     if(InputManager::GetKeyUp(KEY_UP))

@@ -9,6 +9,6 @@ struct Item{
     ~Item() = default;
     string title{};
     int price = 0;
-    string effect{};
+    int effect = -1;
     int effectChange = 0;
 };

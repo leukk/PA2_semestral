@@ -50,7 +50,7 @@ bool MainMenuManager::Update(double updateDelta) {
             switch (m_mainMenu->choice) {
                 case 0:
                     try{
-                        gameData.SetPlayerDataFile();
+                        gameData.SetPlayerDataFilePath();
                         gameData.SetDefaultPlayerStats();
                         gameData.SavePlayerData();
                         m_state = SELECT_BUFF;
@@ -62,7 +62,7 @@ bool MainMenuManager::Update(double updateDelta) {
                     return false;
                 case 1:
                     try{
-                        gameData.SetPlayerDataFile();
+                        gameData.SetPlayerDataFilePath();
                         gameData.LoadPlayerData();
                         GameManager::LoadScene(GameManager::GetHubSceneIndex());
                     }
@@ -179,13 +179,11 @@ void MainMenuManager::m_SetNewGameUi() {
 }
 
 void MainMenuManager::m_ApplyNewGameOptions() {
-    GameManager::GetGameData().PlayerDataSet(PLAYER_DATA_ROLE, to_string(m_roleMenu->choice));
-    int speed = GameManager::GetGameData().PlayerDataGetNum(PLAYER_DATA_SPEED);
-    GameManager::GetGameData().PlayerDataSet(PLAYER_DATA_SPEED, to_string(speed + m_buffChoices[BUFF_SPEED_INDEX]));
-    int lives = GameManager::GetGameData().PlayerDataGetNum(PLAYER_DATA_LIVES);
-    GameManager::GetGameData().PlayerDataSet(PLAYER_DATA_LIVES, to_string(lives + m_buffChoices[BUFF_LIVES_INDEX]));
-    int range = GameManager::GetGameData().PlayerDataGetNum(PLAYER_DATA_RANGE);
-    GameManager::GetGameData().PlayerDataSet(PLAYER_DATA_RANGE, to_string(range + m_buffChoices[BUFF_RANGE_INDEX]));
+    DataLoader& gameData = GameManager::GetGameData();
+    gameData.playerData.role = m_roleMenu->choice;
+    gameData.playerData.speed += m_buffChoices[EFFECT_CHANGE_SPEED];
+    gameData.playerData.lives += m_buffChoices[EFFECT_CHANGE_LIVES];
+    gameData.playerData.range += m_buffChoices[EFFECT_CHANGE_RANGE];
 }
 
 
