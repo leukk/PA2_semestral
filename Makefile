@@ -1,5 +1,5 @@
 COMPILER=g++
-CFLAGS=-Wall -Wextra -pedantic -lncursesw -std=c++17 -g
+CFLAGS=-lncursesw -std=c++17
 OPT=-O0
 BINARY="game.app"
 
@@ -8,8 +8,24 @@ SCENE_CPP=$(wildcard src/scene/*.cpp)
 MANAGERS_CPP=$(wildcard src/managers/*.cpp)
 SCENE_OBJ_CPP=$(wildcard src/scene-objects/*.cpp)
 
+OBJ_DIR="/obj"
+
 all: $(BINARY)
-	rm -rf *.o
+	rm *.o
+
+compile: $(BINARY)
+	rm *.o
+	mv $(BINARY) $(USER)
+
+run: $(BINARY)
+	rm *.o
+	./$(BINARY) examples/1/main.cfg
+
+doc:
+	doxygen Doxyfile
+
+clean:
+	rm $(BINARY) *.o $(USER) *.app
 
 $(BINARY): main.o utils.o scene.o scene-objects.o managers.o
 	$(COMPILER) $(CFLAGS) $(wildcard *.o) -o $(BINARY)
@@ -28,7 +44,4 @@ managers.o: $(MANAGERS_CPP)
 
 scene-objects.o: $(SCENE_OBJ_CPP)
 	$(COMPILER) $(CFLAGS) -c $^
-
-clean:
-	rm -rf $(BINARY) *.o
 

@@ -1,8 +1,10 @@
 #include "Trigger.h"
 
+#include <utility>
+
 Trigger::Trigger(Vec2 position, bool active, string objectType, string tags, string targetTag, Vec2 size) :
-        SceneObject(position, active, objectType, tags),
-        triggered(false), triggerSize(size), m_targetTag(targetTag), m_target(nullptr){
+        SceneObject(position, active, std::move(objectType), std::move(tags)),
+        triggered(false), triggerSize(size), m_targetTag(std::move(targetTag)), m_target(nullptr){
 }
 
 void Trigger::Start() {

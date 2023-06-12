@@ -6,14 +6,17 @@ Enemy::Enemy(Vec2 position, bool active, string objectType, string tags, Vec2 mo
 }
 
 void Enemy::Start() {
+    (void)m_moveSpeed;
 }
 
 bool Enemy::Update(double updateDelta) {
+    (void)updateDelta;
     return true;
 }
 
 void Enemy::Render(WINDOW *gameWin, WINDOW *textWin) {
-    SceneObject::Render(gameWin, textWin);
+    (void)gameWin;
+    (void)textWin;
 }
 
 bool Enemy::m_CheckCollision(int posY, int posX, const string& collisionChars) {

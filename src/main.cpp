@@ -6,7 +6,7 @@
 #include <locale>
 
 /**
- * NCurses initialization function.\n
+ * NCurses initialization function.
  * Calls all relevant ncurses functions to init terminal/screen.
  */
 void InitializeNCurses(){
@@ -18,6 +18,10 @@ void InitializeNCurses(){
     keypad(stdscr, true); // Enables reading of keypad/F-Number keys in an interactive manner
 }
 
+/**
+ * Exits program safely including terminating curses mode.
+ * @param status exit program status
+ */
 void SafeExit(int status){
     // End ncurses mode & exit program
     endwin();
@@ -49,8 +53,10 @@ int main([[maybe_unused]] int argv, char * argc[]){
         inputManager.m_PollInput();
         gameManager.m_GameLoop();
 
-        if(GameManager::GetGameState() == EXIT)
+        if(GameManager::GetGameState() == EXIT){
+            delete gameManager.m_activeScene;
             break;
+        }
     }
 
     SafeExit(EXIT_SUCCESS);

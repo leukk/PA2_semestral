@@ -3,6 +3,7 @@
 using namespace std;
 using std::chrono::high_resolution_clock, std::chrono::milliseconds, std::chrono::duration_cast;
 
+
 GameManager& GameManager::m_Get() {
     static GameManager m_instance;
     return m_instance;

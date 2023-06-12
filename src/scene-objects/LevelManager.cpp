@@ -41,6 +41,7 @@ void LevelManager::Start() {
 }
 
 bool LevelManager::Update(double updateDelta) {
+    (void) updateDelta;
     DataLoader& gameData = GameManager::GetGameData();
 
     if(m_player->livesLeft == 0){
@@ -65,5 +66,6 @@ bool LevelManager::Update(double updateDelta) {
 }
 
 void LevelManager::Render(WINDOW *gameWin, WINDOW *textWin) {
-
+    (void)gameWin;
+    (void)textWin;
 }
