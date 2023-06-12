@@ -1,6 +1,6 @@
 #pragma once
-#include "../managers/GameManager.h"
 #include "../scene/SceneObject.h"
+#include "../managers/GameManager.h"
 #include <vector>
 
 using std::vector;
@@ -14,6 +14,8 @@ public:
 
     void Start() override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
+    void SetContents(const string& contents);
+
 private:
     string m_contents;
     int m_startX, m_startY;

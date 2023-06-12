@@ -13,7 +13,6 @@ public:
     SceneObject(const SceneObject& other) = default;
     virtual ~SceneObject() = default;
 
-    virtual void Initialize();
     virtual void Start();
     virtual bool Update(double updateDelta);
     virtual void Render(WINDOW * gameWin, WINDOW * textWin);

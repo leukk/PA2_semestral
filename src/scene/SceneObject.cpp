@@ -6,9 +6,6 @@ SceneObject::SceneObject(Vec2 pos, bool active, string objectType, string tags) 
     position(pos), active(active), m_objectType(std::move(objectType)), m_tags(std::move(tags)){
 }
 
-void SceneObject::Initialize() {
-}
-
 void SceneObject::Start() {
 }
 

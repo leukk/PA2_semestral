@@ -10,7 +10,7 @@
  * Calls all relevant ncurses functions to init terminal/screen.
  */
 void InitializeNCurses(){
-    setlocale(LC_ALL, ""); // Set locale to work
+    setlocale(LC_ALL, ""); // Set locale
     initscr(); // Init ncurses
     start_color(); // Enable color mode
     noecho(); // Turn off terminal echoing
@@ -35,18 +35,13 @@ int main([[maybe_unused]] int argv, char * argc[]){
     clear();
 
     // Get reference to GameManager singleton & initialize it
-    GameManager& gameManager = GameManager::Get();
-    if(!gameManager.Initialize(&dataLoader))
+    GameManager& gameManager = GameManager::m_Get();
+    if(!gameManager.m_Initialize(&dataLoader))
         SafeExit(EXIT_FAILURE);
 
-    wclear(gameManager.textWindow);
-    wclear(gameManager.gameWindow);
 
     // Get reference to InputManager singleton
     InputManager& inputManager = InputManager::m_Get();
-
-    // Enable non-blocking input mode & clear stdscr after configuration is done
-    nodelay(stdscr, true);
 
 
     while(true){
@@ -54,7 +49,7 @@ int main([[maybe_unused]] int argv, char * argc[]){
         inputManager.m_PollInput();
         gameManager.m_GameLoop();
 
-        if(gameManager.GetGameState() == EXIT)
+        if(GameManager::GetGameState() == EXIT)
             break;
     }
 

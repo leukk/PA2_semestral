@@ -9,6 +9,7 @@ MANAGERS_CPP=$(wildcard src/managers/*.cpp)
 SCENE_OBJ_CPP=$(wildcard src/scene-objects/*.cpp)
 
 all: $(BINARY)
+	rm -rf *.o
 
 $(BINARY): main.o utils.o scene.o scene-objects.o managers.o
 	$(COMPILER) $(CFLAGS) $(wildcard *.o) -o $(BINARY)
