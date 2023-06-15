@@ -1,8 +1,8 @@
 #pragma once
-#include "../managers/GameManager.h"
+#include "../singleton-managers/GameManager.h"
+#include "../structs/Level.h"
+#include "../structs/Item.h"
 #include "GameConstants.h"
-#include "Level.h"
-#include "Item.h"
 #include "PlayerData.h"
 #include <string>
 #include <ncurses.h>
@@ -12,11 +12,10 @@
 #include <vector>
 
 using std::min;
-using std::string, std::stoi;
+using std::string, std::stoi, std::to_string;
 using std::map, std::vector, std::distance;
 using std::ifstream, std::ofstream, std::istringstream, std::ostringstream;
 using std::exception, std::logic_error, std::invalid_argument;
-
 
 class DataLoader {
 public:

@@ -1,8 +1,11 @@
 #pragma once
-#include "../scene/SceneObject.h"
-#include "Trigger.h"
-#include "Menu.h"
+#include "../singleton-managers/GameManager.h"
+#include "../scene-base/SceneObject.h"
+#include "../scene-objects/Trigger.h"
+#include "../scene-objects/Menu.h"
+#include "../structs/Vec2.h"
 #include <ncurses.h>
+#include <string>
 #include <algorithm>
 
 class Trigger;
@@ -13,12 +16,12 @@ using std::vector;
 class HubManager : public SceneObject {
 public:
     HubManager() = delete;
+    explicit HubManager(const SceneObject& sceneObject);
     HubManager(const HubManager& other) = default;
-    HubManager(Vec2 position, bool active, string objectType, string tags, Vec2 playerSpawnPos);
     ~HubManager() override = default;
 
     void Start() override;
-    bool Update(double updateDelta) override;
+    bool Update(int updateDeltaMs) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 private:
     enum HUB_STATE{
@@ -26,7 +29,7 @@ private:
         SHOP_MENU,
         EQUIP_MENU
     };
-    HUB_STATE m_state = NONE;
+    HUB_STATE m_state;
 
     Vec2 m_playerSpawnPos;
     SceneObject * m_player;

@@ -1,29 +1,24 @@
 #pragma once
-#include "../utils/Vec2.h"
-#include "../managers/InputManager.h"
-#include "../scene/SceneObject.h"
+#include "../singleton-managers/GameManager.h"
+#include "../singleton-managers/InputManager.h"
+#include "../scene-base/CharacterObject.h"
+#include "../structs/Vec2.h"
 #include <ncurses.h>
 
-class Enemy : public SceneObject {
+class CharacterObject;
+
+class Enemy : public CharacterObject {
 public:
     Enemy() = delete;
-    Enemy(const Enemy& other) = default;
-    Enemy(Vec2 position, bool active, string objectType, string tags,
-          Vec2 moveDir, int moveSpeed);
+    Enemy(const CharacterObject& other, Vec2 attackDir, Vec2 moveDir);
+    Enemy(const Enemy& object) = default;
     ~Enemy() override = default;
 
     void Start() override;
-    bool Update(double updateDelta) override;
+    bool Update(int updateDeltaMs) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 
 private:
-    bool m_CheckCollision(int posY, int posX, const string& collisionChars);
-
-private:
-    string m_collision{};
-    string m_enemyChar{};
-    string m_bulletChar{};
-
-    int m_moveSpeed;
+    Vec2 m_attackDir;
     Vec2 m_moveDir;
 };

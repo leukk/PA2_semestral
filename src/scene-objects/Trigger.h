@@ -1,26 +1,26 @@
 #pragma once
-#include "../scene/SceneObject.h"
-#include "../managers/GameManager.h"
-#include <vector>
-#include <sstream>
+#include "../singleton-managers/GameManager.h"
+#include "../scene-base/SceneObject.h"
+#include "../structs/Vec2.h"
+#include <string>
 
+using std::string;
 using std::istringstream;
-using std::vector;
 
 class Trigger : public SceneObject{
 public:
     Trigger() = delete;
-    Trigger(Vec2 position, bool active, string objectType, string tags, string targetTag, Vec2 size);
+    Trigger(const SceneObject& sceneObject, Vec2 triggerSize, string targetTag);
     Trigger(const Trigger& other) = default;
     ~Trigger() override = default;
 
     void Start() override;
-    bool Update(double deltaS) override;
+    bool Update(int updateDeltaMs) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 
     bool triggered;
-    Vec2 triggerSize;
-private:
+protected:
+    Vec2 m_triggerSize;
     string m_targetTag;
     SceneObject* m_target;
 };

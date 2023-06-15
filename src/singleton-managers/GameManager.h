@@ -1,8 +1,8 @@
 #pragma once
-#include "InputManager.h"
-#include "../utils/GameConstants.h"
+#include "../scene-base/Scene.h"
 #include "../utils/DataLoader.h"
-#include "../scene/Scene.h"
+#include "../utils/GameConstants.h"
+#include "InputManager.h"
 #include <ncurses.h>
 #include <cmath>
 #include <chrono>
@@ -14,7 +14,9 @@
 class Scene;
 class DataLoader;
 
+using std::max;
 using std::vector;
+using std::chrono::high_resolution_clock, std::chrono::milliseconds, std::chrono::duration_cast;
 
 enum GAME_STATE{
     SCENE_LOAD,
@@ -27,7 +29,7 @@ private:
     GameManager() = default;
 public:
     GameManager(const GameManager& other) = delete;
-    ~GameManager() = default;
+    ~GameManager();
 
     static int GetActiveSceneIndex();
     static Scene* GetActiveScene();
@@ -46,7 +48,7 @@ public:
 private:
     static GameManager& m_Get();
     friend int main([[maybe_unused]] int argv, char * argc[]);
-    bool m_Initialize(DataLoader* dataLoader);
+    bool m_Initialize(char * gameConfigPath);
     void m_GameLoop();
     void m_InitGameWindows();
     [[nodiscard]] bool m_CheckTerminal() const;

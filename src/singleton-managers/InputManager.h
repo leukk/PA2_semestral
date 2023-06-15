@@ -1,5 +1,4 @@
 #pragma once
-#include "GameManager.h"
 #include <ncurses.h>
 #include <array>
 

@@ -1,47 +1,42 @@
 COMPILER=g++
-CFLAGS=-lncursesw -std=c++17
-OPT=-O0
-BINARY="game.app"
+LFLAGS_DEV=-L /usr/local/ncurses/6_4/lib/lib* -lncursesw
+LFLAGS=-lncursesw
+CFLAGS=-O2 -std=c++17 -Wall -pedantic -g
 
-UTIL_CPP=$(wildcard src/utils/*.cpp)
-SCENE_CPP=$(wildcard src/scene/*.cpp)
-MANAGERS_CPP=$(wildcard src/managers/*.cpp)
-SCENE_OBJ_CPP=$(wildcard src/scene-objects/*.cpp)
+BINARY=game.app
+BINARY_CONFIG=examples/1/main.cfg
+LOGIN=kalmakri
 
-OBJ_DIR="/obj"
+SRC_DIR=src
+OBJ_DIR=obj
+SRCS=$(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/**/*.cpp)
+SRC_NAMES=$(patsubst %.cpp, %,$(notdir $(SRCS)))
 
-all: $(BINARY)
-	rm *.o
+all: $(SRC_NAMES)
+	$(COMPILER) $(wildcard $(OBJ_DIR)/*) $(CFLAGS) $(LFLAGS) -o $(BINARY)
 
-compile: $(BINARY)
-	rm *.o
-	mv $(BINARY) $(USER)
+dev: $(SRC_NAMES)
+	$(COMPILER) $(wildcard $(OBJ_DIR)/*) $(CFLAGS) $(LFLAGS_DEV) -o $(BINARY)
 
-run: $(BINARY)
-	rm *.o
-	./$(BINARY) examples/1/main.cfg
+compile: all
+	mv $(BINARY) $(LOGIN)
+
+run: all
+	./$(BINARY) $(BINARY_CONFIG)
 
 doc:
 	doxygen Doxyfile
 
 clean:
-	rm $(BINARY) *.o $(USER) *.app
+	rm -rf $(BINARY) $(LOGIN) $(OBJ_DIR) doc
 
-$(BINARY): main.o utils.o scene.o scene-objects.o managers.o
-	$(COMPILER) $(CFLAGS) $(wildcard *.o) -o $(BINARY)
+$(SRC_NAMES): $(OBJ_DIR)
+	$(COMPILER) $(wildcard $(SRC_DIR)/$(@).cpp $(SRC_DIR)/**/$(@).cpp) $(CFLAGS) -c -o $(OBJ_DIR)/$(@).o
 
-main.o: src/main.cpp
-	$(COMPILER) $(CFLAGS) -c $^ -o $@
+$(OBJ_DIR):
+	mkdir -p $(@)
 
-utils.o: $(UTIL_CPP)
-	$(COMPILER) $(CFLAGS) -c $^
 
-scene.o: $(SCENE_CPP)
-	$(COMPILER) $(CFLAGS) -c $^
 
-managers.o: $(MANAGERS_CPP)
-	$(COMPILER) $(CFLAGS) -c $^
 
-scene-objects.o: $(SCENE_OBJ_CPP)
-	$(COMPILER) $(CFLAGS) -c $^
 

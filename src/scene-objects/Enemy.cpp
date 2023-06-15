@@ -1,29 +1,45 @@
 #include "Enemy.h"
 
-Enemy::Enemy(Vec2 position, bool active, string objectType, string tags, Vec2 moveDir, int moveSpeed) :
-        SceneObject(position, active, objectType, tags), m_collision({}), m_enemyChar({}), m_bulletChar({}),
-        m_moveSpeed(moveSpeed), m_moveDir(moveDir) {
+Enemy::Enemy(const CharacterObject &object, Vec2 attackDir, Vec2 moveDir) :
+        CharacterObject(object),
+        m_attackDir(attackDir), m_moveDir(moveDir) {
 }
 
 void Enemy::Start() {
-    (void)m_moveSpeed;
+    m_bulletManager = dynamic_cast<BulletManager*>(GameManager::GetActiveScene()->GetObjectWithTag(OBJECT_BULLET_MGR));
 }
 
-bool Enemy::Update(double updateDelta) {
-    (void)updateDelta;
+bool Enemy::Update(int updateDeltaMs) {
+    // Update base characterObject state
+    CharacterObject::Update(updateDeltaMs);
+
+    // Check for damaging characters, if no lives left deactivate
+    if(CheckWindowPosForChar(GameManager::GetGameWindow(), position, m_damageChars)){
+        remainingLives--;
+        m_dimTimer = HIT_DIM_MS;
+    }
+    if(remainingLives < 1)
+        active = false;
+
+    // Try to move in moveDir
+    if(!TryMoveCharacter(m_moveDir, GameManager::GetGameWindow()) && m_moveTimer <= 0){
+        m_moveDir.x = -m_moveDir.x;
+        m_moveDir.y = -m_moveDir.y;
+    }
+
+    if(m_bulletManager && m_shootTimer <= 0 && m_shootVelocity && m_shootRange){
+        m_bulletManager->Shoot(position, m_attackDir, m_shootVelocity, m_shootRange);
+        m_shootTimer = m_shootDelay;
+    }
+
     return true;
 }
 
 void Enemy::Render(WINDOW *gameWin, WINDOW *textWin) {
-    (void)gameWin;
-    (void)textWin;
+    CharacterObject::Render(gameWin, textWin);
+    //wprintw(textWin, " Moving to: %d %d | Delay: %d\n", m_moveDir.x, m_moveDir.y, m_moveTimer);
 }
 
-bool Enemy::m_CheckCollision(int posY, int posX, const string& collisionChars) {
-    WINDOW * gameWin = GameManager::GetGameWindow();
-    int ch = mvwinch(gameWin, posY, posX);
-    for (char m_collisionChar : collisionChars)
-        if (ch == (int)m_collisionChar)
-            return true;
-    return false;
-}
+
+
+

@@ -1,19 +1,21 @@
 #pragma once
-#include "SceneObject.h"
-#include "../managers/GameManager.h"
-#include "../utils/GameConstants.h"
+#include "../singleton-managers/GameManager.h"
+#include "../scene-objects-managers/MainMenuManager.h"
+#include "../scene-objects-managers/HubManager.h"
+#include "../scene-objects-managers/LevelManager.h"
+#include "../scene-objects-managers/BulletManager.h"
 #include "../scene-objects/Text.h"
 #include "../scene-objects/Menu.h"
 #include "../scene-objects/Trigger.h"
 #include "../scene-objects/Player.h"
 #include "../scene-objects/Enemy.h"
-#include "../scene-objects/MainMenuManager.h"
-#include "../scene-objects/HubManager.h"
-#include "../scene-objects/LevelManager.h"
+#include "../utils/GameConstants.h"
+#include "SceneObject.h"
 #include <vector>
 #include <sstream>
 
 class GameManager;
+class SceneObject;
 
 using std::vector;
 using std::logic_error;

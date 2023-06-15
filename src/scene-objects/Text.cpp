@@ -1,46 +1,42 @@
 #include "Text.h"
 
-Text::Text(Vec2 position, bool active, string objectType, string tags, string contents)
-        : SceneObject(position, active, std::move(objectType), std::move(tags)),
-        m_contents(std::move(contents)), m_startX(0), m_startY(0), m_lines({}){
+Text::Text(const DisplayObject& displayObject) :
+    DisplayObject(displayObject),
+    m_wcontent({}){
 }
 
 void Text::SetContents(const string &contents) {
-    m_lines.clear();
-    size_t lastNewline = 0;
-    size_t nextNewline = 0;
-    string lineString;
-    bool hasNewlines = false;
-    while ((nextNewline = contents.find("!n", lastNewline+2)) != string::npos){
-        if(!hasNewlines)
-            lineString = contents.substr(lastNewline, nextNewline-lastNewline);
-        else
-            lineString = contents.substr(lastNewline+2, nextNewline-lastNewline-2);
-        m_lines.push_back(lineString);
-        lastNewline = nextNewline;
-        m_startY++;
-        hasNewlines = true;
-    }
-    if(hasNewlines)
-        m_lines.push_back(contents.substr(lastNewline+2));
-
-    if(!hasNewlines)
-        m_lines.push_back(contents);
+    m_content = contents;
 }
 
 void Text::Start() {
-    SetContents(m_contents);
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+    m_wcontent = converter.from_bytes(m_content);
+}
+
+bool Text::Update(int updateDeltaMs) {
+    (void)updateDeltaMs;
+    return true;
 }
 
 void Text::Render(WINDOW *gameWin, WINDOW *textWin) {
     (void)textWin;
-    int startY = position.y;
+    int printY = position.y;
+    int printX = position.x;
 
-    for (auto& line: m_lines) {
-        mvwprintw(gameWin, startY, position.x, "%s\n", line.c_str());
-        startY++;
+    wattron(gameWin, COLOR_PAIR(m_color));
+    for (auto ch : m_wcontent) {
+        if (!iswspace(ch) && ch != L'!')
+            mvwaddnwstr(gameWin, printY, printX, &ch, 1);
+        printX++;
+        if (ch == L'!') {
+            printY++;
+            printX = position.x;
+        }
     }
+    wattroff(gameWin, COLOR_PAIR(m_color));
 }
+
 
 
 

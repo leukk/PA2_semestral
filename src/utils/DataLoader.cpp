@@ -44,13 +44,10 @@ bool DataLoader::LoadMainConfig(char * argConfig) {
         return false;
     }
 
+    // Load items & levels into their respective vectors
     m_ProcessItems();
     m_ProcessLevels();
 
-    wprintw(GameManager::GetTextWindow(), " Config loaded, found:\n"
-                            " %lu scenes containing %lu parameters\n",
-            m_sceneObjectCounts.size(), m_configData.size());
-    wrefresh(GameManager::GetTextWindow());
     return true;
 }
 
@@ -63,8 +60,11 @@ size_t DataLoader::ConfigObjectCount(int sceneIndex) const{
 }
 
 string DataLoader::ConfigGetParam(int sceneIndex, int objectIndex, const string &param) const{
+    // Build object key by its combination of scene/object indexes followed by the variable name
     ostringstream key;
     key << sceneIndex << CONF_PREFIX_DELIM << objectIndex << CONF_PREFIX_DELIM << param;
+
+    // Find value in config data map or return empty string
     auto valueIt = m_configData.find(key.str());
     if(valueIt == m_configData.end())
         return {};
@@ -111,7 +111,7 @@ void DataLoader::UnsetPlayerDataFilePath() {
 void DataLoader::LoadPlayerData() {
     ifstream playerDataFile(m_playerDataPath, std::ios::in);
     if(!playerDataFile.is_open())
-        throw invalid_argument(" Failed to open playerData, cannot open or create file");
+        throw invalid_argument(" Failed to open playerData, cannot open file: " + m_playerDataPath);
 
     playerData.Read(playerDataFile);
     playerDataFile.close();
@@ -120,7 +120,7 @@ void DataLoader::LoadPlayerData() {
 void DataLoader::SavePlayerData() {
     ofstream playerDataFile(m_playerDataPath, std::ios::out | std::ios::trunc);
     if(!playerDataFile.is_open())
-        throw invalid_argument(" Failed to save playerData, cannot open or create file");
+        throw invalid_argument(" Failed to save playerData, cannot open or create file: " + m_playerDataPath);
 
     playerData.Write(playerDataFile);
     playerDataFile.close();
@@ -276,6 +276,8 @@ void DataLoader::m_ProcessLevels() {
     size_t levelIndex = 0;
     Level newLevel;
     while(true){
+        // Load level values using variable prefix followed by levels index
+        // If title or description missing end level loading
         newLevel.title = ConfigGetParam(SHARED_DATA, SHARED_DATA, PARAM_LEVEL_TITLE_PREFIX + to_string(levelIndex));
         if(newLevel.title.empty())
             break;
@@ -285,6 +287,7 @@ void DataLoader::m_ProcessLevels() {
         newLevel.sceneIndex = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_LEVEL_SCENE_INDEX_PREFIX + to_string(levelIndex));
         newLevel.reward = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_LEVEL_REWARD_PREFIX + to_string(levelIndex));
 
+        // Set index to search for next level & push currently loaded one to levels vector
         levelIndex++;
         m_levels.push_back(newLevel);
     }
@@ -294,6 +297,8 @@ void DataLoader::m_ProcessItems() {
     size_t itemIndex = 0;
     Item newItem;
     while(true){
+        // Load item values using variable prefix followed by items index
+        // If title or price missing end loading
         newItem.title = ConfigGetParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_TITLE_PREFIX + to_string(itemIndex));
         if(newItem.title.empty())
             break;
@@ -302,6 +307,8 @@ void DataLoader::m_ProcessItems() {
             break;
         newItem.effect = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_EFFECT_PREFIX + to_string(itemIndex));
         newItem.effectChange = ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_EFFECT_CHANGE_PREFIX + to_string(itemIndex));
+
+        // Set level index to for next item's loading & push currently loaded item to items vector
         itemIndex++;
         m_items.push_back(newItem);
     }

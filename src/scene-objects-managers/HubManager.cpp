@@ -1,11 +1,15 @@
 #include "HubManager.h"
 
-HubManager::HubManager(Vec2 position, bool active, string objectType, string tags, Vec2 playerSpawnPos) :
-        SceneObject(position, active, std::move(objectType), std::move(tags)), m_state(NONE),
-        m_playerSpawnPos(playerSpawnPos), m_player(nullptr), m_shopMenu(nullptr), m_equipMenu(nullptr),
+#include <utility>
+
+HubManager::HubManager(const SceneObject& sceneObject) :
+        SceneObject(sceneObject),
+        m_state(NONE),
+        m_playerSpawnPos(Vec2::Zero()),
+        m_player(nullptr), m_shopMenu(nullptr), m_equipMenu(nullptr),
         m_buyTrigger(nullptr), m_equipTrigger(nullptr), m_exitTrigger(nullptr), m_levelTrigger(nullptr),
         m_itemPrice(0), m_equippedItemsLimit(0), m_isEquipped(false), m_canEquip(false), m_isOwned(false),
-        m_canPurchase(false){
+        m_canPurchase(false) {
 }
 
 void HubManager::Start() {
@@ -13,9 +17,9 @@ void HubManager::Start() {
     Scene* gameScene = GameManager::GetActiveScene();
     ostringstream missingObjects;
 
-    m_player = gameScene->GetObjectWithTag(TAG_PLAYER);
+    m_player = gameScene->GetObjectWithTag(PARAM_PLAYER);
     if(!m_player)
-        missingObjects << TAG_PLAYER;
+        missingObjects << PARAM_PLAYER;
     m_buyTrigger = dynamic_cast<Trigger*>(gameScene->GetObjectWithTag(TAG_HUB_BUY_TRIGGER));
     if(!m_buyTrigger)
         missingObjects << TAG_HUB_BUY_TRIGGER;
@@ -42,11 +46,12 @@ void HubManager::Start() {
     if(!m_equippedItemsLimit)
         throw invalid_argument(" Item equip limit not defined or set to 0");
 
+    m_playerSpawnPos = Vec2(gameData.ConfigGetParam(GameManager::GetActiveSceneIndex(), SHARED_DATA, PARAM_PLAYER_SPAWN_POS));
     m_player->position = m_playerSpawnPos;
 }
 
-bool HubManager::Update(double updateDelta) {
-    (void)updateDelta;
+bool HubManager::Update(int updateDeltaMs) {
+    (void)updateDeltaMs;
     DataLoader& gameData = GameManager::GetGameData();
     Scene * activeScene = GameManager::GetActiveScene();
 
@@ -97,13 +102,16 @@ bool HubManager::Update(double updateDelta) {
     }
 
     if(m_state == SHOP_MENU){
-        if(InputManager::GetKeyDown(KEY_BACKSPACE)){
+        if(InputManager::GetKeyDown(KEY_SPACE)){
             activeScene->SetActiveObjectsWithTag(false, TAG_HUB_SHOP_UI);
             activeScene->SetActiveObjectsWithTag(true, TAG_HUB_DEFAULT_UI);
             activeScene->SetActiveObjectsWithTag(false, TAG_HUB_EQUIP_UI);
             m_state = NONE;
             return false;
         }
+
+        if(gameData.ConfigItems().empty())
+            return true;
 
         auto itemIndexIt = std::find(gameData.playerData.ownedItems.begin(), gameData.playerData.ownedItems.end(),
                                      (int)m_shopMenu->choice);
@@ -124,7 +132,7 @@ bool HubManager::Update(double updateDelta) {
     }
 
     if(m_state == EQUIP_MENU){
-        if(InputManager::GetKeyDown(KEY_BACKSPACE)){
+        if(InputManager::GetKeyDown(KEY_SPACE)){
             activeScene->SetActiveObjectsWithTag(false, TAG_HUB_SHOP_UI);
             activeScene->SetActiveObjectsWithTag(true, TAG_HUB_DEFAULT_UI);
             activeScene->SetActiveObjectsWithTag(false, TAG_HUB_EQUIP_UI);
@@ -174,22 +182,23 @@ void HubManager::Render(WINDOW *gameWin, WINDOW *textWin) {
     }
 
     if(m_state == SHOP_MENU){
+        wprintw(textWin, " SHOP: Buy by pressing 'RIGHT', sell by pressing 'LEFT'\n");
         if(m_isOwned)
-            wprintw(textWin, " SHOP: Item owned, sell by pressing 'LEFT' for half original price\n");
+            wprintw(textWin, " Item owned, can be sold for: %d\n", m_itemPrice/2);
         else{
-            wprintw(textWin, " SHOP: Item not owned, cost: %d, coins: %d", m_itemPrice, gameData.playerData.coins);
+            wprintw(textWin, " Item not owned, cost: %d, coins: %d", m_itemPrice, gameData.playerData.coins);
             if(m_canPurchase)
                 wprintw(textWin, " - purchase by pressing 'RIGHT'\n");
             else
-                wprintw(textWin, " - not enough to purchase\n");
+                wprintw(textWin, " - not enough coins to purchase\n");
         }
-        wprintw(textWin, " Exit by pressing 'BACKSPACE'\n");
+        wprintw(textWin, " Exit by pressing 'SPACE'\n");
     }
 
     if(m_state == EQUIP_MENU){
         wprintw(textWin, " INVENTORY: 'RIGHT' to equip, 'LEFT' to unequip, empty slots: %zu\n",
                 m_equippedItemsLimit-gameData.playerData.equippedItems.size());
         wprintw(textWin, " Equipped: %s\n", m_isEquipped ? "true" : "false");
-        wprintw(textWin, " Exit by pressing 'BACKSPACE'\n");
+        wprintw(textWin, " Exit by pressing 'SPACE'\n");
     }
 }

@@ -1,75 +1,99 @@
 #include "Player.h"
 
-Player::Player(Vec2 position, bool active, string objectType, string tags)
-    : SceneObject(position, active, std::move(objectType), std::move(tags)),
-      livesLeft(0), totalSpeed(0), totalRange(0), m_bulletChar("+"), m_playerChar("■"){
+Player::Player(const CharacterObject& characterObject)
+    : CharacterObject(characterObject),
+      m_lastMoveDir(Vec2::Zero()),
+      m_roleActionDelay(500),
+      m_roleActionTimer(0){
 }
 
 void Player::Start() {
     DataLoader& gameData = GameManager::GetGameData();
-    totalSpeed = gameData.playerData.speed;
-    totalRange = gameData.playerData.range;
+    m_moveDelay = gameData.playerData.moveDelay;
+    m_shootRange = gameData.playerData.attackRange;
 
     for (auto item : gameData.playerData.equippedItems){
         int effect = gameData.ConfigItems()[item].effect;
         int effectChange = gameData.ConfigItems()[item].effectChange;
         switch (effect) {
             case EFFECT_CHANGE_SPEED:
-                totalSpeed += effectChange;
+                m_moveDelay -= effectChange * 50;
                 break;
             case EFFECT_CHANGE_RANGE:
-                totalRange += effectChange;
+                m_shootRange += effectChange;
                 break;
         }
     }
 
-    m_collisionChars = gameData.ConfigGetParam(GameManager::GetActiveSceneIndex(), SHARED_DATA, PARAM_COLLISION);
-    m_playerDamageChars = gameData.ConfigGetParam(GameManager::GetActiveSceneIndex(), SHARED_DATA, PARAM_PLAYER_DAMAGE);
+    m_bulletManager = dynamic_cast<BulletManager*>(GameManager::GetActiveScene()->GetObjectWithTag(OBJECT_BULLET_MGR));
 }
 
-bool Player::Update(double updateDelta) {
-    (void) updateDelta;
+bool Player::Update(int updateDeltaMs) {
+    CharacterObject::Update(updateDeltaMs);
+    WINDOW * gameWin = GameManager::GetGameWindow();
+    DataLoader& gameData = GameManager::GetGameData();
+
+    if(CheckWindowPosForChar(gameWin, position, m_damageChars)){
+        remainingLives--;
+        m_dimTimer = HIT_DIM_MS;
+    }
+
+    if(m_roleActionTimer > 0)
+        m_roleActionTimer -= updateDeltaMs;
 
     if(InputManager::GetKeyDown(KEY_LEFT)){
-        if(m_CheckCollision(position.y, position.x - 1, m_playerDamageChars))
-            livesLeft--;
-        if(!m_CheckCollision(position.y, position.x - 1, m_collisionChars))
-            position.x--;
+        m_lastMoveDir = Vec2::Left();
+        TryMoveCharacter(Vec2::Left(), gameWin);
     }
     if(InputManager::GetKeyDown(KEY_RIGHT)){
-        if(m_CheckCollision(position.y, position.x + 1, m_playerDamageChars))
-            livesLeft--;
-        if(!m_CheckCollision(position.y, position.x + 1, m_collisionChars))
-            position.x++;
+        m_lastMoveDir = Vec2::Right();
+        TryMoveCharacter(Vec2::Right(), gameWin);
     }
     if(InputManager::GetKeyDown(KEY_UP)){
-        if(m_CheckCollision(position.y - 1, position.x, m_playerDamageChars))
-            livesLeft--;
-        if(!m_CheckCollision(position.y - 1, position.x, m_collisionChars))
-            position.y--;
+        m_lastMoveDir = Vec2::Up();
+        TryMoveCharacter(Vec2::Up(), gameWin);
     }
     if(InputManager::GetKeyDown(KEY_DOWN)){
-        if(m_CheckCollision(position.y+1, position.x, m_playerDamageChars))
-            livesLeft--;
-        if(!m_CheckCollision(position.y+1, position.x, m_collisionChars))
-            position.y++;
+        m_lastMoveDir = Vec2::Down();
+        TryMoveCharacter(Vec2::Down(), gameWin);
     }
+    if(InputManager::GetKeyDown(KEY_SPACE) && m_bulletManager && m_shootTimer <= 0){
+        m_bulletManager->Shoot(position, m_lastMoveDir, m_shootVelocity, m_shootRange);
+        m_shootTimer = m_shootDelay;
+    }
+
+    // Active role abilities
+    if(InputManager::GetKeyDown('c') && m_roleActionTimer <= 0) {
+        if (gameData.playerData.role == 0) {
+            m_bulletManager->Shoot(position + Vec2::Left(), Vec2::Left(), m_shootVelocity, m_shootRange);
+            m_bulletManager->Shoot(position + Vec2::Right(), Vec2::Right(), m_shootVelocity, m_shootRange);
+        }
+        if (gameData.playerData.role == 1)
+            remainingLives++;
+        if (gameData.playerData.role == 2) {
+            m_bulletManager->Shoot(position + Vec2::Up(), Vec2::Up(), m_shootVelocity, m_shootRange);
+            m_bulletManager->Shoot(position + Vec2::Down(), Vec2::Down(), m_shootVelocity, m_shootRange);
+            m_bulletManager->Shoot(position + Vec2::Left(), Vec2::Left(), m_shootVelocity, m_shootRange);
+            m_bulletManager->Shoot(position + Vec2::Right(), Vec2::Right(), m_shootVelocity, m_shootRange);
+        }
+        m_roleActionTimer = m_roleActionDelay;
+    }
+
+    // Passive role abilities
+    if(gameData.playerData.role == 0 && m_shootTimer > 0)
+        m_shootTimer -= 4;
+    if(gameData.playerData.role == 1 && m_moveTimer > 0)
+        m_moveTimer -= 2;
+
     return true;
 }
 
 void Player::Render(WINDOW *gameWin, WINDOW *textWin) {
-    mvwprintw(gameWin, position.y, position.x, "%s", m_playerChar.c_str());
-    wprintw(textWin, " Player: lives left: %d", livesLeft);
+    CharacterObject::Render(gameWin, textWin);
+    wprintw(textWin, " Lives : %d | Range: %d | Attack tmr: %03d | Move tmr: %03d | Role tmr: %03d\n",
+            remainingLives, m_shootRange, m_shootTimer, m_moveTimer, m_roleActionTimer);
 }
 
-bool Player::m_CheckCollision(int posY, int posX, const string& collisionChars) {
-    WINDOW * gameWin = GameManager::GetGameWindow();
-    int ch = mvwinch(gameWin, posY, posX);
-    for (char m_collisionChar : collisionChars)
-        if (ch == (int)m_collisionChar)
-            return true;
-    return false;
-}
 
 
 

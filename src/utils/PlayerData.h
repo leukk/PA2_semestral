@@ -22,9 +22,9 @@ struct PlayerData{
     int nextLevelIndex = 0;
     int role = 0;
     int coins = 0;
-    int speed = 2;
+    int moveDelay = 2;
     int lives = 3;
-    int range = 10;
+    int attackRange = 10;
 
 private:
     static void m_WriteNumVector(ofstream& output, vector<int>& vec);

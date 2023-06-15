@@ -6,9 +6,9 @@ void PlayerData::Write(ofstream &output) {
     m_WriteNum(output, nextLevelIndex);
     m_WriteNum(output, role);
     m_WriteNum(output, coins);
-    m_WriteNum(output, speed);
+    m_WriteNum(output, moveDelay);
     m_WriteNum(output, lives);
-    m_WriteNum(output, range);
+    m_WriteNum(output, attackRange);
 }
 
 void PlayerData::Read(ifstream &input) {
@@ -17,9 +17,9 @@ void PlayerData::Read(ifstream &input) {
     m_ReadNum(input, nextLevelIndex);
     m_ReadNum(input, role);
     m_ReadNum(input, coins);
-    m_ReadNum(input, speed);
+    m_ReadNum(input, moveDelay);
     m_ReadNum(input, lives);
-    m_ReadNum(input, range);
+    m_ReadNum(input, attackRange);
 }
 
 void PlayerData::m_WriteNumVector(ofstream& output, vector<int>& vec) {

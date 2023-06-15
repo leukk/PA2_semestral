@@ -1,65 +1,56 @@
-#include "utils/DataLoader.h"
-#include "managers/GameManager.h"
-#include "managers/InputManager.h"
+#include "singleton-managers/GameManager.h"
+#include "singleton-managers/InputManager.h"
 #include <ncurses.h>
 #include <cmath>
 #include <locale>
 
+
 /**
- * NCurses initialization function.
+ * NCurses initialization function
  * Calls all relevant ncurses functions to init terminal/screen.
  */
 void InitializeNCurses(){
     setlocale(LC_ALL, ""); // Set locale
     initscr(); // Init ncurses
-    start_color(); // Enable color mode
     noecho(); // Turn off terminal echoing
     cbreak(); // Turn off character buffering (except terminal control characters such as CTRL-C,Z,V...)
     keypad(stdscr, true); // Enables reading of keypad/F-Number keys in an interactive manner
+    curs_set(0); // Sets cursor as invisible
 }
 
 /**
- * Exits program safely including terminating curses mode.
- * @param status exit program status
+ * Exits program and turns off curses mode
+ * @param status in - program exit status
  */
 void SafeExit(int status){
-    // End ncurses mode & exit program
+    delwin(GameManager::GetGameWindow());
+    delwin(GameManager::GetTextWindow());
     endwin();
-    exit(status);
+    exit_curses(status);
 }
 
 int main([[maybe_unused]] int argv, char * argc[]){
     InitializeNCurses();
 
-    // Load config from filepath provided in argc or by user
-    DataLoader dataLoader;
-    if(!dataLoader.LoadMainConfig(argc[1]))
-        SafeExit(EXIT_FAILURE);
-
-    clear();
+    init_pair(0, COLOR_BLUE, COLOR_BLACK);
 
     // Get reference to GameManager singleton & initialize it
     GameManager& gameManager = GameManager::m_Get();
-    if(!gameManager.m_Initialize(&dataLoader))
+    if(!gameManager.m_Initialize(argc[1]))
         SafeExit(EXIT_FAILURE);
-
 
     // Get reference to InputManager singleton
     InputManager& inputManager = InputManager::m_Get();
 
-
     while(true){
-        // Fetch input & update game afterward
+        // Fetch player input
         inputManager.m_PollInput();
+        // Update game
         gameManager.m_GameLoop();
 
-        if(GameManager::GetGameState() == EXIT){
-            delete gameManager.m_activeScene;
+        if(GameManager::GetGameState() == EXIT)
             break;
-        }
     }
 
     SafeExit(EXIT_SUCCESS);
 }
-
-

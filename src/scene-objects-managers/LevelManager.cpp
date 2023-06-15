@@ -2,9 +2,10 @@
 
 #include <utility>
 
-LevelManager::LevelManager(Vec2 position, bool active, string objectType, string tags, Vec2 playerSpawnPos) :
-    SceneObject(position, active, std::move(objectType), std::move(tags)), m_playerSpawnPos(playerSpawnPos),
-    m_playerTotalLives(0), m_player(nullptr), m_successTrigger(nullptr), m_abortTrigger(nullptr),
+LevelManager::LevelManager(const SceneObject& sceneObject) :
+    SceneObject(sceneObject),
+    m_playerSpawnPos(Vec2::Zero()), m_playerTotalLives(0),
+    m_player(nullptr), m_successTrigger(nullptr), m_abortTrigger(nullptr),
     m_collectibles({}){
 }
 
@@ -13,9 +14,9 @@ void LevelManager::Start() {
     Scene* gameScene = GameManager::GetActiveScene();
     ostringstream missingObjects;
 
-    m_player = dynamic_cast<Player *>(gameScene->GetObjectWithTag(TAG_PLAYER));
+    m_player = dynamic_cast<Player*>(gameScene->GetObjectWithTag(PARAM_PLAYER));
     if(!m_player)
-        missingObjects << TAG_PLAYER;
+        missingObjects << PARAM_PLAYER;
     m_abortTrigger = dynamic_cast<Trigger*>(gameScene->GetObjectWithTag(TAG_LEVEL_ABORT_TRIGGER));
     if(!m_abortTrigger)
         missingObjects << TAG_LEVEL_ABORT_TRIGGER;
@@ -27,6 +28,8 @@ void LevelManager::Start() {
     if(!missingObjects.str().empty())
         throw invalid_argument(" Level manager requires objects with following tags:\n" + missingObjects.str());
 
+    m_playerSpawnPos = Vec2(gameData.ConfigGetParam(GameManager::GetActiveSceneIndex(), SHARED_DATA, PARAM_PLAYER_SPAWN_POS));
+
     m_playerTotalLives = gameData.playerData.lives;
     for (auto item : gameData.playerData.equippedItems){
         int effect = gameData.ConfigItems()[item].effect;
@@ -37,16 +40,16 @@ void LevelManager::Start() {
     }
 
     m_player->position = m_playerSpawnPos;
-    m_player->livesLeft = m_playerTotalLives;
+    m_player->remainingLives = m_playerTotalLives;
 }
 
-bool LevelManager::Update(double updateDelta) {
-    (void) updateDelta;
+bool LevelManager::Update(int updateDeltaMs) {
+    (void) updateDeltaMs;
     DataLoader& gameData = GameManager::GetGameData();
 
-    if(m_player->livesLeft == 0){
+    if(m_player->remainingLives <= 0){
         m_player->position = m_playerSpawnPos;
-        m_player->livesLeft = m_playerTotalLives;
+        m_player->remainingLives = m_playerTotalLives;
     }
 
     if(m_abortTrigger->triggered){

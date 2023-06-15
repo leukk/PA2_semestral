@@ -1,9 +1,10 @@
 #include "Menu.h"
 
-Menu::Menu(Vec2 position, bool active, string objectType, string tags, string optString) :
-        SceneObject(position, active, objectType, tags){
+Menu::Menu(const DisplayObject& displayObject) :
+        DisplayObject(displayObject),
+        choice(0), selectable(true), options({}){
     string optBuffer;
-    istringstream optionsStream(optString);
+    istringstream optionsStream(m_content);
     while (optionsStream.good()){
         optionsStream >> optBuffer;
         options.push_back(optBuffer);
@@ -12,11 +13,11 @@ Menu::Menu(Vec2 position, bool active, string objectType, string tags, string op
 }
 
 void Menu::Start() {
-    SceneObject::Start();
+    (void)choice;
 }
 
-bool Menu::Update(double updateDelta) {
-    (void) updateDelta;
+bool Menu::Update(int updateDeltaMs) {
+    (void) updateDeltaMs;
 
     if(!selectable || options.empty()){
         choice = 0;
@@ -33,23 +34,30 @@ bool Menu::Update(double updateDelta) {
 }
 
 void Menu::Render(WINDOW *gameWin, WINDOW *textWin) {
-    (void)textWin;
-
     int winY, winX;
     getmaxyx(gameWin, winY, winX);
     int optionIndex = 0;
     int startY = position == Vec2::Zero() ? (winY/2) : position.y;
 
+    wattron(gameWin, COLOR_PAIR(m_color));
     for(auto& option : options){
         // Highlight render string if selected
-        string renderString = choice == optionIndex && selectable ? "> " + option + " <" : option;
+        bool selectOpt = choice == optionIndex && selectable;
+        string renderString = selectOpt ? "> " + option + " <" : option;
 
         // Calculate print position & print
         int startX = position == Vec2::Zero() ? (winX/2) - ((int)renderString.size()/2) : position.x - ((int)renderString.size()/2);
+
+        if(selectOpt)
+            wattron(gameWin, A_BOLD);
         mvwprintw(gameWin, startY, startX, "%s", renderString.c_str());
+        if(selectOpt)
+            wattroff(gameWin, A_BOLD);
+
         startY++;
         optionIndex++;
     }
+    wattroff(gameWin, COLOR_PAIR(m_color));
 
     wprintw(textWin, " Menu selected option: %d\n", choice);
 }

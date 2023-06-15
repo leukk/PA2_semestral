@@ -1,8 +1,9 @@
 #include "GameManager.h"
 
-using namespace std;
-using std::chrono::high_resolution_clock, std::chrono::milliseconds, std::chrono::duration_cast;
-
+GameManager::~GameManager() {
+    delete m_activeScene;
+    delete m_gameData;
+}
 
 GameManager& GameManager::m_Get() {
     static GameManager m_instance;
@@ -91,10 +92,18 @@ void GameManager::ExitGame() {
     gm.m_gameState = EXIT;
 }
 
+void GameManager::RefreshWindows() {
+    GameManager& gm = GameManager::m_Get();
+    box(gm.m_gameWindow, 0, 0);
+    box(gm.m_textWindow, 0, 0);
+    wrefresh(gm.m_gameWindow);
+    wrefresh(gm.m_textWindow);
+}
+
 void GameManager::m_InitGameWindows(){
     int termSizeY = 0;
     int termSizeX = 0;
-    getmaxyx(stdscr,termSizeY,termSizeX); // Retrieve triggerSize of terminal window
+    getmaxyx(stdscr,termSizeY,termSizeX); // Retrieve m_triggerSize of terminal window
 
     int winStartY = (termSizeY / 2) - ((m_gameWinY + m_textWinY) / 2);
     int winStartX = (termSizeX / 2) - (m_gameWinX / 2);
@@ -104,56 +113,68 @@ void GameManager::m_InitGameWindows(){
     nodelay(stdscr, true);
     nodelay(m_textWindow, true);
     nodelay(m_gameWindow, true);
-}
 
-void GameManager::RefreshWindows() {
-    GameManager& gm = GameManager::m_Get();
-    box(gm.m_gameWindow, 0, 0);
-    box(gm.m_textWindow, 0, 0);
-    wrefresh(gm.m_gameWindow);
-    wrefresh(gm.m_textWindow);
+    start_color(); // Enable terminal color mode & set color pairs
+    init_pair(0, COLOR_WHITE, COLOR_BLACK);
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_BLUE, COLOR_BLACK);
+    init_pair(4, COLOR_CYAN, COLOR_BLACK);
+    init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(6, COLOR_YELLOW, COLOR_BLACK);
 }
 
 /**
- *  Checks if terminal supports all necessary features & is of required triggerSize
- *  returns true / false as result
+ * Checks if terminal supports all necessary features & is of required size
+ * @return bool - terminal can/cannot be used
  */
 bool GameManager::m_CheckTerminal() const{
+    ostringstream errorMsg;
+
     int y,x;
-    getmaxyx(stdscr,y,x); // Gets terminal y,x triggerSize
+    getmaxyx(stdscr,y,x); // Gets terminal y,x m_triggerSize
     if(y < m_gameWinY || x < m_gameWinX){
-        ostringstream errorMsg;
-        errorMsg << " Insufficient window triggerSize (" << y << ", " << x << ")\n";
+        errorMsg << " Insufficient window m_triggerSize (" << y << ", " << x << ")\n";
         errorMsg << " Required minimum is (" << m_gameWinY << ", " << m_gameWinX << ")\n";
+    }
+
+    if(!has_colors())
+        errorMsg << " Terminal does not support colors\n";
+
+    if(!errorMsg.str().empty()){
         ShowError(errorMsg.str());
         return false;
     }
+
     return true;
 }
 
-bool GameManager::m_Initialize(DataLoader* dataLoader) {
-    // Set data loaded from dataLoader as m_gameData
-    m_gameData = dataLoader;
+bool GameManager::m_Initialize(char * gameConfigPath) {
+    // Allocate new gameData instance
+    m_gameData = new DataLoader();
     if(!m_gameData)
+        return false;
+
+    if(!m_gameData->LoadMainConfig(gameConfigPath))
         return false;
 
     // Try fetch game required variables
     ostringstream missingParams;
     try {
-        m_updateRate = dataLoader->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_UPDATE_RATE);
+        m_updateRate = m_gameData->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_UPDATE_RATE);
         if(!m_updateRate)
             missingParams << PARAM_UPDATE_RATE << " ";
-        m_gameWinY = dataLoader->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_GAME_WIN_Y);
+        m_gameWinY = m_gameData->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_GAME_WIN_Y);
         if(!m_gameWinY)
             missingParams << PARAM_GAME_WIN_Y << " ";
-        m_gameWinX = dataLoader->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_GAME_WIN_X);
+        m_gameWinX = m_gameData->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_GAME_WIN_X);
         if(!m_gameWinX)
             missingParams << PARAM_GAME_WIN_X << " ";
-        m_textWinY = dataLoader->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_TEXT_WIN_Y);
+        m_textWinY = m_gameData->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_TEXT_WIN_Y);
         if(!m_textWinY)
             missingParams << PARAM_TEXT_WIN_Y << " ";
-        m_menuSceneIndex = dataLoader->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_MENU_SCENE);
-        m_hubSceneIndex = dataLoader->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_HUB_SCENE);
+        m_menuSceneIndex = m_gameData->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_MENU_SCENE);
+        m_hubSceneIndex = m_gameData->ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_HUB_SCENE);
         if(m_menuSceneIndex == m_hubSceneIndex)
             missingParams << PARAM_MENU_SCENE << ", " << PARAM_HUB_SCENE << " not defined or equal";
 
@@ -175,6 +196,9 @@ bool GameManager::m_Initialize(DataLoader* dataLoader) {
     // Check for terminal compatibility
     if(!m_CheckTerminal())
         return false;
+
+    // Clear stdscr before creating new windows
+    clear();
 
     // Inits ncurses game&text windows
     m_InitGameWindows();
@@ -200,11 +224,10 @@ void GameManager::m_GameLoop() {
             m_activeSceneIndex, m_activeScene->sceneObjects.size(), m_deltaMs,  m_visualCounter);
 
     // Update & render all scene objects
-    double deltaS = 1000.0/(double)m_deltaMs;
     for(auto obj : m_activeScene->sceneObjects){
         if(!obj->active)
             continue;
-        if(!obj->Update(deltaS))
+        if(!obj->Update(max((int)m_deltaMs,1)))
             return;
         obj->Render(m_gameWindow, m_textWindow);
     }

@@ -1,30 +1,22 @@
 #pragma once
-#include "../managers/InputManager.h"
-#include "../scene/SceneObject.h"
-#include <ncurses.h>
+#include "../singleton-managers/GameManager.h"
+#include "../singleton-managers/InputManager.h"
+#include "../scene-base/CharacterObject.h"
+#include "../structs/Vec2.h"
 
-class Player : public SceneObject {
+class Player : public CharacterObject {
 public:
     Player() = delete;
     Player(const Player& other) = default;
-    Player(Vec2 position, bool active, string objectType, string tags);
+    explicit Player(const CharacterObject& characterObject);
     ~Player() override = default;
 
     void Start() override;
-    bool Update(double updateDelta) override;
+    bool Update(int updateDeltaMs) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 
 private:
-    static bool m_CheckCollision(int y, int x, const string& collisionChars);
-
-public:
-    int livesLeft;
-    int totalSpeed;
-    int totalRange;
-
-private:
-    string m_collisionChars;
-    string m_playerDamageChars;
-    string m_bulletChar;
-    string m_playerChar;
+    Vec2 m_lastMoveDir;
+    int m_roleActionDelay;
+    int m_roleActionTimer;
 };

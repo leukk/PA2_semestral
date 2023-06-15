@@ -1,17 +1,21 @@
 #include "MainMenuManager.h"
 
+#include <utility>
 
-MainMenuManager::MainMenuManager(Vec2 position, bool active, string objectType, string tags)
-    : SceneObject(position, active, std::move(objectType), std::move(tags)){
+
+MainMenuManager::MainMenuManager(const SceneObject& sceneObject)
+    : SceneObject(sceneObject),
+    m_state(MAIN_MENU),
+    m_buffTokens(0), m_usedTokens(0), m_buffChoices({}),
+    m_mainMenu(nullptr), m_infoTextObject(nullptr),
+    m_buffMenu(nullptr), m_roleMenu(nullptr),
+    m_playerSpawnPos(Vec2::One()){
 }
 
 void MainMenuManager::Start() {
     Scene* gameScene = GameManager::GetActiveScene();
     ostringstream missingObjects;
 
-    m_menuUi = gameScene->GetObjectsWithTag(TAG_M_MENU_MAIN_UI);
-    if(m_menuUi.empty())
-        missingObjects << TAG_M_MENU_MAIN_UI;
     m_mainMenu = dynamic_cast<Menu*>(gameScene->GetObjectWithTag(TAG_M_MENU_MENU_OBJ));
     if(!m_mainMenu)
         missingObjects << TAG_M_MENU_MENU_OBJ;
@@ -19,9 +23,6 @@ void MainMenuManager::Start() {
     if(!m_infoTextObject)
         missingObjects << TAG_M_MENU_INFO_OBJ;
 
-    m_newGameUi = gameScene->GetObjectsWithTag(TAG_M_MENU_NEW_GAME_UI);
-    if(m_newGameUi.empty())
-        missingObjects << TAG_M_MENU_NEW_GAME_UI;
     m_buffMenu = dynamic_cast<Menu*>(gameScene->GetObjectWithTag(TAG_M_MENU_BUFF_MENU_OBJ));
     if(!m_buffMenu)
         missingObjects << TAG_M_MENU_BUFF_MENU_OBJ;
@@ -41,8 +42,8 @@ void MainMenuManager::Start() {
         m_buffChoices.push_back(0);
 }
 
-bool MainMenuManager::Update(double updateDelta) {
-    (void) updateDelta;
+bool MainMenuManager::Update(int updateDeltaMs) {
+    (void) updateDeltaMs;
     DataLoader& gameData = GameManager::GetGameData();
 
     if(m_state == MAIN_MENU){
@@ -142,32 +143,20 @@ void MainMenuManager::Render(WINDOW *gameWin, WINDOW *textWin) {
 }
 
 void MainMenuManager::m_SetInfoUi() {
-    for (auto it: m_menuUi) {
-        it->active = false;
-    }
-    for (auto it: m_newGameUi) {
-        it->active = false;
-    }
+    GameManager::GetActiveScene()->SetActiveObjectsWithTag(false, TAG_M_MENU_MAIN_UI);
+    GameManager::GetActiveScene()->SetActiveObjectsWithTag(false, TAG_M_MENU_NEW_GAME_UI);
     m_infoTextObject->active = true;
 }
 
 void MainMenuManager::m_SetMainUi(){
-    for (auto it: m_menuUi) {
-        it->active = true;
-    }
-    for (auto it: m_newGameUi) {
-        it->active = false;
-    }
+    GameManager::GetActiveScene()->SetActiveObjectsWithTag(true, TAG_M_MENU_MAIN_UI);
+    GameManager::GetActiveScene()->SetActiveObjectsWithTag(false, TAG_M_MENU_NEW_GAME_UI);
     m_infoTextObject->active = false;
 }
 
 void MainMenuManager::m_SetNewGameUi() {
-    for (auto it: m_menuUi) {
-        it->active = false;
-    }
-    for (auto it: m_newGameUi) {
-        it->active = true;
-    }
+    GameManager::GetActiveScene()->SetActiveObjectsWithTag(false, TAG_M_MENU_MAIN_UI);
+    GameManager::GetActiveScene()->SetActiveObjectsWithTag(true, TAG_M_MENU_NEW_GAME_UI);
     m_infoTextObject->active = false;
 
     m_buffMenu->active = true;
@@ -181,9 +170,9 @@ void MainMenuManager::m_SetNewGameUi() {
 void MainMenuManager::m_ApplyNewGameOptions() {
     DataLoader& gameData = GameManager::GetGameData();
     gameData.playerData.role = m_roleMenu->choice;
-    gameData.playerData.speed += m_buffChoices[EFFECT_CHANGE_SPEED];
+    gameData.playerData.moveDelay += m_buffChoices[EFFECT_CHANGE_SPEED];
     gameData.playerData.lives += m_buffChoices[EFFECT_CHANGE_LIVES];
-    gameData.playerData.range += m_buffChoices[EFFECT_CHANGE_RANGE];
+    gameData.playerData.attackRange += m_buffChoices[EFFECT_CHANGE_RANGE];
 }
 
 

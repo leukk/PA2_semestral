@@ -1,25 +1,27 @@
 #pragma once
-#include "../scene/SceneObject.h"
-#include "../managers/GameManager.h"
+#include "../singleton-managers/InputManager.h"
+#include "../scene-base/DisplayObject.h"
 #include <vector>
 #include <sstream>
+#include <string>
 
-using std::istringstream;
 using std::vector;
+using std::string;
+using std::istringstream;
 
-class Menu : public SceneObject{
+class Menu : public DisplayObject{
 public:
     Menu() = delete;
-    Menu(Vec2 position, bool active, string objectType, string tags, string optString);
+    explicit Menu(const DisplayObject& displayObj);
     Menu(const Menu& other) = default;
     ~Menu() override = default;
 
     void Start() override;
-    bool Update(double deltaS) override;
+    bool Update(int updateDeltaMs) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 
-    int choice = 0;
-    bool selectable = true;
-    vector<string> options{};
+    int choice;
+    bool selectable;
+    vector<string> options;
 };
 

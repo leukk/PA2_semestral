@@ -1,6 +1,14 @@
 #pragma once
-#include "../scene/SceneObject.h"
-#include "Player.h"
+#include "../singleton-managers/GameManager.h"
+#include "../scene-base/SceneObject.h"
+#include "../scene-objects/Player.h"
+#include "../scene-objects/Trigger.h"
+#include "../structs/Vec2.h"
+#include <string>
+#include <vector>
+
+using std::string;
+using std::vector;
 
 class Player;
 class Trigger;
@@ -8,12 +16,12 @@ class Trigger;
 class LevelManager : public SceneObject {
 public:
     LevelManager() = delete;
+    explicit LevelManager(const SceneObject& sceneObject);
     LevelManager(const LevelManager& other) = default;
-    LevelManager(Vec2 position, bool active, string objectType, string tags, Vec2 playerSpawnPos);
     ~LevelManager() override = default;
 
     void Start() override;
-    bool Update(double updateDelta) override;
+    bool Update(int updateDeltaMs) override;
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 
 private:
