@@ -7,8 +7,8 @@ struct Level{
     Level() = default;
     Level(const Level& other) = default;
     ~Level() = default;
-    string title{};
-    string description{};
-    int sceneIndex = 0;
-    int reward = 0;
+    string title{}; /// Level title
+    string description{}; /// Level description
+    int sceneIndex = 0; /// Level scene index
+    int reward = 0; /// Reward for completing level
 };

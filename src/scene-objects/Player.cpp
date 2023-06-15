@@ -8,22 +8,8 @@ Player::Player(const CharacterObject& characterObject)
 }
 
 void Player::Start() {
-    DataLoader& gameData = GameManager::GetGameData();
-    m_moveDelay = gameData.playerData.moveDelay;
-    m_shootRange = gameData.playerData.attackRange;
-
-    for (auto item : gameData.playerData.equippedItems){
-        int effect = gameData.ConfigItems()[item].effect;
-        int effectChange = gameData.ConfigItems()[item].effectChange;
-        switch (effect) {
-            case EFFECT_CHANGE_SPEED:
-                m_moveDelay -= effectChange * 50;
-                break;
-            case EFFECT_CHANGE_RANGE:
-                m_shootRange += effectChange;
-                break;
-        }
-    }
+    // Set player bonus effects
+    AddBonusEffects();
 
     m_bulletManager = dynamic_cast<BulletManager*>(GameManager::GetActiveScene()->GetObjectWithTag(OBJECT_BULLET_MGR));
 }
@@ -33,14 +19,17 @@ bool Player::Update(int updateDeltaMs) {
     WINDOW * gameWin = GameManager::GetGameWindow();
     DataLoader& gameData = GameManager::GetGameData();
 
+    // Check for damage
     if(CheckWindowPosForChar(gameWin, position, m_damageChars)){
         remainingLives--;
         m_dimTimer = HIT_DIM_MS;
     }
 
+    // Update role action timer
     if(m_roleActionTimer > 0)
         m_roleActionTimer -= updateDeltaMs;
 
+    // Movement / shooting controls
     if(InputManager::GetKeyDown(KEY_LEFT)){
         m_lastMoveDir = Vec2::Left();
         TryMoveCharacter(Vec2::Left(), gameWin);
@@ -63,7 +52,7 @@ bool Player::Update(int updateDeltaMs) {
     }
 
     // Active role abilities
-    if(InputManager::GetKeyDown('c') && m_roleActionTimer <= 0) {
+    if(InputManager::GetKeyDown(KEY_ABILITY) && m_bulletManager && m_roleActionTimer <= 0) {
         if (gameData.playerData.role == 0) {
             m_bulletManager->Shoot(position + Vec2::Left(), Vec2::Left(), m_shootVelocity, m_shootRange);
             m_bulletManager->Shoot(position + Vec2::Right(), Vec2::Right(), m_shootVelocity, m_shootRange);
@@ -92,6 +81,29 @@ void Player::Render(WINDOW *gameWin, WINDOW *textWin) {
     CharacterObject::Render(gameWin, textWin);
     wprintw(textWin, " Lives : %d | Range: %d | Attack tmr: %03d | Move tmr: %03d | Role tmr: %03d\n",
             remainingLives, m_shootRange, m_shootTimer, m_moveTimer, m_roleActionTimer);
+}
+
+void Player::AddBonusEffects() {
+    DataLoader& gameData = GameManager::GetGameData();
+    // Add creation bonuses
+    remainingLives = gameData.playerData.lives;
+    m_moveDelay = gameData.playerData.moveDelay;
+    m_shootRange = gameData.playerData.attackRange;
+
+    // Add item bonuses
+    for (auto item : gameData.playerData.equippedItems){
+        int effect = gameData.ConfigItems()[item].effect;
+        int effectChange = gameData.ConfigItems()[item].effectChange;
+        if(effect == EFFECT_CHANGE_LIVES){
+            remainingLives += effectChange;
+        }
+        if(effect == EFFECT_CHANGE_RANGE){
+            m_shootRange += effectChange;
+        }
+        if(effect == EFFECT_CHANGE_SPEED){
+            m_moveDelay -= effectChange;
+        }
+    }
 }
 
 

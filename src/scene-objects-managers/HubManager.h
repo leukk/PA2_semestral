@@ -20,34 +20,56 @@ public:
     HubManager(const HubManager& other) = default;
     ~HubManager() override = default;
 
+    /**
+     * On scene start override
+     *
+     * Fetches all necessary dependencies such as player, menus, etc.
+     */
     void Start() override;
+    /**
+     * On scene update override
+     *
+     * Fetches user input and updates hub state accordingly
+     * @param updateDeltaMs
+     * @return update successful
+     */
     bool Update(int updateDeltaMs) override;
+    /**
+     * On render override
+     *
+     * Renders hub text information.
+     * @param gameWin game window
+     * @param textWin text window
+     */
     void Render(WINDOW *gameWin, WINDOW *textWin) override;
 private:
+    /**
+     * Hub state
+     */
     enum HUB_STATE{
         NONE,
         SHOP_MENU,
         EQUIP_MENU
     };
-    HUB_STATE m_state;
+    HUB_STATE m_state; /// Current hub state
 
-    Vec2 m_playerSpawnPos;
-    SceneObject * m_player;
+    Vec2 m_playerInitialPos; /// Initial player position for respawning
+    SceneObject * m_player; /// Player dependency pointer
 
-    Menu * m_shopMenu;
-    Menu * m_equipMenu;
+    Menu * m_shopMenu; /// Shop menu dependency pointer
+    Menu * m_equipMenu; /// Equip menu dependency pointer
 
-    Trigger * m_buyTrigger;
-    Trigger * m_equipTrigger;
-    Trigger * m_exitTrigger;
-    Trigger * m_levelTrigger;
+    Trigger * m_buyTrigger; /// Buy trigger dependency pointer
+    Trigger * m_equipTrigger; /// Equip trigger dependency pointer
+    Trigger * m_exitTrigger; /// Exit trigger dependency pointer
+    Trigger * m_levelTrigger; /// Enter level trigger dependency pointer
 
-    int m_itemPrice;
-    int m_equippedItemsLimit;
+    int m_itemPrice; /// Selected item price
+    int m_equippedItemsLimit; /// Limit of equipped items
 
-    bool m_isEquipped;
-    bool m_canEquip;
-    bool m_isOwned;
-    bool m_canPurchase;
+    bool m_isEquipped; /// Item is equipped
+    bool m_canEquip; /// Item can be equipped
+    bool m_isOwned; /// Item is owned
+    bool m_canPurchase; /// Item can be purchased
 };
 

@@ -37,7 +37,6 @@ bool Enemy::Update(int updateDeltaMs) {
 
 void Enemy::Render(WINDOW *gameWin, WINDOW *textWin) {
     CharacterObject::Render(gameWin, textWin);
-    //wprintw(textWin, " Moving to: %d %d | Delay: %d\n", m_moveDir.x, m_moveDir.y, m_moveTimer);
 }
 
 

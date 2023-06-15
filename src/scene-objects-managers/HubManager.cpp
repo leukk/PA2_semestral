@@ -5,7 +5,7 @@
 HubManager::HubManager(const SceneObject& sceneObject) :
         SceneObject(sceneObject),
         m_state(NONE),
-        m_playerSpawnPos(Vec2::Zero()),
+        m_playerInitialPos(Vec2::Zero()),
         m_player(nullptr), m_shopMenu(nullptr), m_equipMenu(nullptr),
         m_buyTrigger(nullptr), m_equipTrigger(nullptr), m_exitTrigger(nullptr), m_levelTrigger(nullptr),
         m_itemPrice(0), m_equippedItemsLimit(0), m_isEquipped(false), m_canEquip(false), m_isOwned(false),
@@ -17,9 +17,10 @@ void HubManager::Start() {
     Scene* gameScene = GameManager::GetActiveScene();
     ostringstream missingObjects;
 
-    m_player = gameScene->GetObjectWithTag(PARAM_PLAYER);
+    // Get hub dependencies
+    m_player = gameScene->GetObjectWithTag(TAG_PLAYER);
     if(!m_player)
-        missingObjects << PARAM_PLAYER;
+        missingObjects << TAG_PLAYER;
     m_buyTrigger = dynamic_cast<Trigger*>(gameScene->GetObjectWithTag(TAG_HUB_BUY_TRIGGER));
     if(!m_buyTrigger)
         missingObjects << TAG_HUB_BUY_TRIGGER;
@@ -39,15 +40,16 @@ void HubManager::Start() {
     if(!m_equipMenu)
         missingObjects << TAG_HUB_EQUIP_MENU;
 
+    // Throw if dependencies missing
     if(!missingObjects.str().empty())
         throw invalid_argument(" Hub manager requires objects with following tags:\n" + missingObjects.str());
 
+    // Get equipped items limit from config data
     m_equippedItemsLimit = gameData.ConfigGetNumParam(SHARED_DATA, SHARED_DATA, PARAM_ITEM_EQUIP_LIMIT);
     if(!m_equippedItemsLimit)
         throw invalid_argument(" Item equip limit not defined or set to 0");
 
-    m_playerSpawnPos = Vec2(gameData.ConfigGetParam(GameManager::GetActiveSceneIndex(), SHARED_DATA, PARAM_PLAYER_SPAWN_POS));
-    m_player->position = m_playerSpawnPos;
+    m_playerInitialPos = m_player->position;
 }
 
 bool HubManager::Update(int updateDeltaMs) {
@@ -55,11 +57,13 @@ bool HubManager::Update(int updateDeltaMs) {
     DataLoader& gameData = GameManager::GetGameData();
     Scene * activeScene = GameManager::GetActiveScene();
 
+    // Player is entering a level
     if(m_levelTrigger->triggered){
+        // Try load next level scene
         try{
-            m_player->position = m_playerSpawnPos;
+            m_player->position = m_playerInitialPos;
             if(gameData.playerData.nextLevelIndex >= (int)gameData.ConfigLevels().size()){
-                GameManager::ShowError(" No more quests\n");
+                GameManager::ShowError(" No more levels\n");
                 return false;
             }
             GameManager::LoadScene(gameData.ConfigLevels()[gameData.playerData.nextLevelIndex].sceneIndex);
@@ -71,18 +75,22 @@ bool HubManager::Update(int updateDeltaMs) {
         return false;
     }
 
+    // Player is leaving game
     if(m_exitTrigger->triggered){
-        m_player->position = m_playerSpawnPos;
+        // Save player data & go back to main menu
+        m_player->position = m_playerInitialPos;
         gameData.SavePlayerData();
         gameData.UnsetPlayerDataFilePath();
         GameManager::LoadScene(GameManager::GetMenuSceneIndex());
         return false;
     }
 
+    // Player entering buy menu
     if(m_buyTrigger->triggered && m_state==NONE && InputManager::GetKeyDown(KEY_SPACE)){
         m_shopMenu->options.clear();
         for(auto& it : gameData.ConfigItems())
             m_shopMenu->options.push_back(it.title);
+        // Switch ui to buy menu
         activeScene->SetActiveObjectsWithTag(true, TAG_HUB_SHOP_UI);
         activeScene->SetActiveObjectsWithTag(false, TAG_HUB_DEFAULT_UI);
         activeScene->SetActiveObjectsWithTag(false, TAG_HUB_EQUIP_UI);
@@ -90,10 +98,13 @@ bool HubManager::Update(int updateDeltaMs) {
         return false;
     }
 
+    // Player entering equip menu
     if(m_equipTrigger->triggered && m_state==NONE && InputManager::GetKeyDown(KEY_SPACE)){
+        // Update equip menu options based on owned items
         m_equipMenu->options.clear();
         for(auto& it : gameData.playerData.ownedItems)
             m_equipMenu->options.push_back(gameData.ConfigItems()[it].title);
+        // Switch ui to equip menu
         activeScene->SetActiveObjectsWithTag(false, TAG_HUB_SHOP_UI);
         activeScene->SetActiveObjectsWithTag(false, TAG_HUB_DEFAULT_UI);
         activeScene->SetActiveObjectsWithTag(true, TAG_HUB_EQUIP_UI);
@@ -101,7 +112,9 @@ bool HubManager::Update(int updateDeltaMs) {
         return false;
     }
 
+    // Player in shop menu
     if(m_state == SHOP_MENU){
+        // Player leaving shop menu - enable default ui
         if(InputManager::GetKeyDown(KEY_SPACE)){
             activeScene->SetActiveObjectsWithTag(false, TAG_HUB_SHOP_UI);
             activeScene->SetActiveObjectsWithTag(true, TAG_HUB_DEFAULT_UI);
@@ -110,9 +123,11 @@ bool HubManager::Update(int updateDeltaMs) {
             return false;
         }
 
+        // Return if no items defined in config
         if(gameData.ConfigItems().empty())
             return true;
 
+        // Find currently selected item & get price, can purchase / is owned info
         auto itemIndexIt = std::find(gameData.playerData.ownedItems.begin(), gameData.playerData.ownedItems.end(),
                                      (int)m_shopMenu->choice);
         m_isOwned = itemIndexIt != gameData.playerData.ownedItems.end();
@@ -120,18 +135,29 @@ bool HubManager::Update(int updateDeltaMs) {
         m_itemPrice = gameData.ConfigItems()[m_shopMenu->choice].price;
         m_canPurchase = gameData.playerData.coins >= m_itemPrice;
 
+        // Purchase on right key
         if(!m_isOwned && m_canPurchase && InputManager::GetKeyDown(KEY_RIGHT)){
             gameData.playerData.coins -= m_itemPrice;
             gameData.playerData.ownedItems.push_back(m_shopMenu->choice);
         }
 
+        // Sell on left key
         if(m_isOwned && InputManager::GetKeyDown(KEY_LEFT)){
+            // Remove from equippedIt items
+            auto equippedIt = std::find(gameData.playerData.equippedItems.begin(), gameData.playerData.equippedItems.end(),
+                                        *itemIndexIt);
+            if (equippedIt != gameData.playerData.equippedItems.end())
+                gameData.playerData.equippedItems.erase(equippedIt);
+
+            // Remove from bought items & get back half price
             gameData.playerData.coins += m_itemPrice / 2;
             gameData.playerData.ownedItems.erase(itemIndexIt);
         }
     }
 
+    // Player in equip menu
     if(m_state == EQUIP_MENU){
+        // Player leaving equip menu - enable default ui
         if(InputManager::GetKeyDown(KEY_SPACE)){
             activeScene->SetActiveObjectsWithTag(false, TAG_HUB_SHOP_UI);
             activeScene->SetActiveObjectsWithTag(true, TAG_HUB_DEFAULT_UI);
@@ -140,17 +166,21 @@ bool HubManager::Update(int updateDeltaMs) {
             return false;
         }
 
+        // Return if no owned items
         if(m_equipMenu->options.empty())
             return true;
 
+        // Find equipped item & isEquipped info
         auto itemEquippedIt = std::find(gameData.playerData.equippedItems.begin(), gameData.playerData.equippedItems.end(),
                                         gameData.playerData.ownedItems[m_equipMenu->choice]);
         m_isEquipped = itemEquippedIt != gameData.playerData.equippedItems.end();
 
+        // Unequip on left key
         if(m_isEquipped && InputManager::GetKeyDown(KEY_LEFT)){
             gameData.playerData.equippedItems.erase(itemEquippedIt);
         }
 
+        // Equip on right key
         m_canEquip = (int)gameData.playerData.equippedItems.size() < m_equippedItemsLimit;
         if(m_canEquip && !m_isEquipped && InputManager::GetKeyDown(KEY_RIGHT)){
             gameData.playerData.equippedItems.push_back(gameData.playerData.ownedItems[m_equipMenu->choice]);
@@ -164,6 +194,7 @@ void HubManager::Render(WINDOW *gameWin, WINDOW *textWin) {
     (void)gameWin;
     DataLoader& gameData = GameManager::GetGameData();
 
+    // Render default hub text - level info
     if(m_state == NONE){
         if(m_buyTrigger->triggered)
             wprintw(textWin, " Enter shop by pressing 'SPACE'\n");
@@ -181,6 +212,7 @@ void HubManager::Render(WINDOW *gameWin, WINDOW *textWin) {
         }
     }
 
+    // Render shop text - item / purchasing info
     if(m_state == SHOP_MENU){
         wprintw(textWin, " SHOP: Buy by pressing 'RIGHT', sell by pressing 'LEFT'\n");
         if(m_isOwned)
@@ -195,6 +227,7 @@ void HubManager::Render(WINDOW *gameWin, WINDOW *textWin) {
         wprintw(textWin, " Exit by pressing 'SPACE'\n");
     }
 
+    // Render equip text - item equipping info
     if(m_state == EQUIP_MENU){
         wprintw(textWin, " INVENTORY: 'RIGHT' to equip, 'LEFT' to unequip, empty slots: %zu\n",
                 m_equippedItemsLimit-gameData.playerData.equippedItems.size());

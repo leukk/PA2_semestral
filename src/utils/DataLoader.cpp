@@ -1,18 +1,21 @@
 #include "DataLoader.h"
 
-DataLoader::DataLoader() : m_configString(), m_configData(map<string,string>()), m_sceneObjectCounts(vector<int>()){
+DataLoader::DataLoader() :
+    m_configString(), m_configData(map<string,string>()), m_sceneObjectCounts(vector<int>()){
 }
 
 string DataLoader::GetInputString(const string& prompt){
-    char inputBuffer[200];
+    char inputBuffer[MAX_USER_INPUT_LENGTH];
 
+    // Clears screen & prints prompt
     wclear(GameManager::GetTextWindow());
     mvwprintw(GameManager::GetTextWindow(),1,0, "%s:\n ", prompt.c_str());
     GameManager::RefreshWindows();
 
+    // Get input string from user
     nodelay(GameManager::GetTextWindow(), false);
     echo();
-    wgetnstr(GameManager::GetTextWindow(), inputBuffer, 199);
+    wgetnstr(GameManager::GetTextWindow(), inputBuffer, MAX_USER_INPUT_LENGTH-1);
     noecho();
     nodelay(GameManager::GetTextWindow(), true);
 
@@ -99,6 +102,7 @@ const vector<Item> &DataLoader::ConfigItems() {
 }
 
 void DataLoader::SetPlayerDataFilePath() {
+    // Clear current player path & get new one from user
     m_playerDataPath.clear();
     while (m_playerDataPath.empty())
         m_playerDataPath = GetInputString(" Enter non-empty player save name:");
@@ -109,6 +113,7 @@ void DataLoader::UnsetPlayerDataFilePath() {
 }
 
 void DataLoader::LoadPlayerData() {
+    // Try open player data & read if opening successful
     ifstream playerDataFile(m_playerDataPath, std::ios::in);
     if(!playerDataFile.is_open())
         throw invalid_argument(" Failed to open playerData, cannot open file: " + m_playerDataPath);
@@ -118,6 +123,7 @@ void DataLoader::LoadPlayerData() {
 }
 
 void DataLoader::SavePlayerData() {
+    // Try open player data & save if opening successful
     ofstream playerDataFile(m_playerDataPath, std::ios::out | std::ios::trunc);
     if(!playerDataFile.is_open())
         throw invalid_argument(" Failed to save playerData, cannot open or create file: " + m_playerDataPath);
@@ -144,6 +150,7 @@ string DataLoader::m_GetMainConfigPath(char * argConfig){
     // Try open ifstream of main config file
     ifstream configStream(configPath);
     while(!configStream.is_open()){
+        // Ask for filepath input as file couldn't open
         configPath = GetInputString(" Could not open config file, try entering path again or abort by typing 'X'");
         if(configPath == "x" || configPath == "X")
             return {};

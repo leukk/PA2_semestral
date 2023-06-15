@@ -6,8 +6,10 @@
 
 
 /**
- * NCurses initialization function
+ * Initializes curses mode.
+ *
  * Calls all relevant ncurses functions to init terminal/screen.
+ * Sets cbreak, noecho mode and allows keypad input.
  */
 void InitializeNCurses(){
     setlocale(LC_ALL, ""); // Set locale
@@ -20,6 +22,7 @@ void InitializeNCurses(){
 
 /**
  * Exits program and turns off curses mode
+ *
  * @param status in - program exit status
  */
 void SafeExit(int status){

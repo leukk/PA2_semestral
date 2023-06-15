@@ -8,7 +8,7 @@ BulletManager::BulletManager(const DisplayObject& sceneObject, string collision)
 }
 
 void BulletManager::Start() {
-    // Initialize non active bullet pool
+    // Initialize non-active bullet pool
     for (int i = 0; i < BULLET_POOL_SIZE; ++i) {
         Bullet bullet;
         m_bullets.push_back(bullet);
@@ -16,6 +16,7 @@ void BulletManager::Start() {
 }
 
 void BulletManager::Shoot(Vec2 from, Vec2 dir, int moveDelay, int range) {
+    // Sets bullet parameters & pushes it to back
     Bullet& b = m_bullets.front();
     b.position = from;
     b.direction = dir;

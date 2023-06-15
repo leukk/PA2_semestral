@@ -5,18 +5,9 @@ Text::Text(const DisplayObject& displayObject) :
     m_wcontent({}){
 }
 
-void Text::SetContents(const string &contents) {
-    m_content = contents;
-}
-
 void Text::Start() {
     wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
     m_wcontent = converter.from_bytes(m_content);
-}
-
-bool Text::Update(int updateDeltaMs) {
-    (void)updateDeltaMs;
-    return true;
 }
 
 void Text::Render(WINDOW *gameWin, WINDOW *textWin) {

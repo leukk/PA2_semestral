@@ -98,14 +98,16 @@
 // LevelManager dependencies tag keywords
 #define TAG_LEVEL_ABORT_TRIGGER "abort-zone"
 #define TAG_LEVEL_SUCCESS_TRIGGER "success-zone"
-#define TAG_LEVEL_COLLECT_OBJ "collectible"
 
 // Shared tag keywords
-#define PARAM_PLAYER "player"
-#define PARAM_ENEMY "enemy"
+#define TAG_PLAYER "player"
 
 // SPACE keypress
 #define KEY_SPACE 32
+#define KEY_ABILITY 'c'
+
+#define MAX_USER_INPUT_LENGTH 200
+
 
 
 

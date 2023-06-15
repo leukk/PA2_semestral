@@ -52,10 +52,18 @@ WINDOW *GameManager::GetGameWindow() {
 
 bool GameManager::LoadScene(int sceneIndex) {
     GameManager& gm = GameManager::m_Get();
+
+    // Check if index valid
+    if(sceneIndex > (int)gm.m_gameData->ConfigSceneCount()-1){
+        ShowError(" Trying to load scene beyond max config defined scene\n");
+        return false;
+    }
+
+    // Try load & replace scene
     Scene * oldScene = gm.m_activeScene;
     int oldSceneIndex = gm.m_activeSceneIndex;
     try {
-        // Try to create scene
+        // Try to create new scene with provided index
         gm.m_activeScene = new Scene(sceneIndex);
         gm.m_activeSceneIndex = sceneIndex;
 
@@ -76,14 +84,17 @@ bool GameManager::LoadScene(int sceneIndex) {
 void GameManager::ShowError(const std::string &message) {
     GameManager& gm = GameManager::m_Get();
 
+    // Clear window & show error message
     wclear(gm.m_gameWindow);
     mvwprintw(gm.m_gameWindow, 1, 0, " Runtime error:\n%s\n Press any key to continue...", message.c_str());
     RefreshWindows();
 
+    // Enable blocking input & wait for any keypress
     nodelay(gm.m_gameWindow, false);
     wgetch(gm.m_gameWindow);
     nodelay(gm.m_gameWindow, true);
 
+    // Refresh back to game mode
     RefreshWindows();
 }
 
@@ -103,18 +114,22 @@ void GameManager::RefreshWindows() {
 void GameManager::m_InitGameWindows(){
     int termSizeY = 0;
     int termSizeX = 0;
-    getmaxyx(stdscr,termSizeY,termSizeX); // Retrieve m_triggerSize of terminal window
+    getmaxyx(stdscr,termSizeY,termSizeX); // Retrieve size of terminal window
 
+    // Calc y and x starting coordinates for game/text windows
     int winStartY = (termSizeY / 2) - ((m_gameWinY + m_textWinY) / 2);
     int winStartX = (termSizeX / 2) - (m_gameWinX / 2);
+    // Create game/text windows
     m_gameWindow = newwin(m_gameWinY, m_gameWinX, winStartY, winStartX);
     m_textWindow = newwin(m_textWinY, m_gameWinX, winStartY + m_gameWinY, winStartX);
 
+    // Enable non-blocking input mode on all windows
     nodelay(stdscr, true);
     nodelay(m_textWindow, true);
     nodelay(m_gameWindow, true);
 
-    start_color(); // Enable terminal color mode & set color pairs
+    // Enable terminal color mode & set color pairs
+    start_color();
     init_pair(0, COLOR_WHITE, COLOR_BLACK);
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
@@ -124,10 +139,7 @@ void GameManager::m_InitGameWindows(){
     init_pair(6, COLOR_YELLOW, COLOR_BLACK);
 }
 
-/**
- * Checks if terminal supports all necessary features & is of required size
- * @return bool - terminal can/cannot be used
- */
+
 bool GameManager::m_CheckTerminal() const{
     ostringstream errorMsg;
 
@@ -232,6 +244,7 @@ void GameManager::m_GameLoop() {
         obj->Render(m_gameWindow, m_textWindow);
     }
 
+    // Refresh windows for visual changes to take effect
     RefreshWindows();
 
     auto endTime = high_resolution_clock::now();

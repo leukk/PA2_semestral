@@ -3,6 +3,9 @@
 Menu::Menu(const DisplayObject& displayObject) :
         DisplayObject(displayObject),
         choice(0), selectable(true), options({}){
+}
+
+void Menu::Start() {
     string optBuffer;
     istringstream optionsStream(m_content);
     while (optionsStream.good()){
@@ -10,10 +13,6 @@ Menu::Menu(const DisplayObject& displayObject) :
         options.push_back(optBuffer);
         optBuffer.clear();
     }
-}
-
-void Menu::Start() {
-    (void)choice;
 }
 
 bool Menu::Update(int updateDeltaMs) {

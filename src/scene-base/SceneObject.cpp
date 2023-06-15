@@ -9,6 +9,7 @@ bool SceneObject::HasTag(const string& tag) {
 }
 
 bool SceneObject::CheckWindowPosForChar(WINDOW *window, Vec2 pos, const string &charGroup) {
+    // Check if char at screenPos in charGroup
     int screenCh = mvwinch(window, pos.y, pos.x);
     screenCh &= A_CHARTEXT;
     for (char ch : charGroup)
@@ -23,7 +24,7 @@ void SceneObject::Start() {
 
 bool SceneObject::Update(int updateDeltaMs) {
     (void) updateDeltaMs;
-    return false;
+    return true;
 }
 
 void SceneObject::Render(WINDOW *gameWin, WINDOW *textWin) {
